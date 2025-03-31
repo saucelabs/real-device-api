@@ -1,0 +1,295 @@
+openapi: "3.0.0"
+info:
+  version: "1.0.0"
+  title: "Real Device API"
+  x-last-modified: "2025-01-20"
+servers:
+  - url: https://api.us-west-1.saucelabs.com/rdc/v2/
+    description: us-west
+  - url: https://api.eu-central-1.saucelabs.com/rdc/v2/
+    description: eu-central
+  - url: https://api.us-east-4.saucelabs.com/rdc/v2/
+    description: us-east
+security:
+  - basicAuth: []
+paths:
+  /sessions:
+    post:
+      summary: "Allocate a device and create a new session"
+      description: |
+        Creates a new device session.
+      tags:
+        - "Session Lifecycle"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceId:
+                  type: string
+                  description: "The device on which to create the device session. If empty a device will be selected at random."
+                  example: "iPhone_16_real"
+      responses:
+        "201":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCreation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    get:
+      summary: List device sessions
+      description: Retrieves a list of device sessions, including pending, active and recently closed sessions.
+      tags:
+        - "Session Lifecycle"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Session"
+  /sessions/{sessionId}:
+    get:
+      summary: Get details of a specific device session
+      tags:
+        - "Session Lifecycle"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+    delete:
+      summary: Close and release a device session
+      tags:
+        - "Session Lifecycle"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/CloseDeviceSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: Basic authentication with username and access key
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: about:blank
+              title:
+                type: string
+                example: Device does not exist.
+              detail:
+                type: string
+                example: The deviceId: Samsung XR does not exist. Please ensure you provide an existing device Id.
+    NotAuthorized:
+      description: Not Authorized
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: about:blank
+              title:
+                type: string
+                example: Unauthorized
+              detail:
+                type: string
+                example: You are not authorized to view this resource.
+    DeviceSessionNotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: Device session not found
+    TooManyRequests:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: about:blank
+              title:
+                type: string
+                example: You have been sending yoo many requests.
+              detail:
+                type: string
+                example: You have exceeded the rate limit of 60 req/s. Please ensure you are not sending too many requests.
+    BadGateway:
+      description: Bad gateway
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: about:blank
+              title:
+                type: string
+                example: Bad gateway
+              detail:
+                type: string
+                example: No listener on device. Please retry and start a new session when this issue persists.
+    CloseDeviceSession:
+      description: Session is closing
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              sessionId:
+                $ref: "#/components/schemas/SessionId"
+              status:
+                $ref: "#/components/schemas/SessionStatus"
+                example: CLOSING
+  schemas:
+    DeviceStatus:
+      type: string
+      enum:
+        - "AVAILABLE"
+        - "IN_USE"
+        - "CLEANING"
+        - "REBOOTING"
+        - "MAINTENANCE"
+        - "OFFLINE"
+      example: "IN_USE"
+    Device:
+      type: object
+      properties:
+        descriptor:
+          type: string
+          example: "iPhone_13_real"
+        isPrivateDevice:
+          type: boolean
+          example: true
+        status:
+          $ref: "#/components/schemas/DeviceStatus"
+        inUseBy:
+          type: array
+          items:
+            type: object
+            properties:
+              username:
+                type: string
+                example: "john.smith"
+            required:
+              - username
+      required:
+        - descriptor
+        - isPrivateDevice
+        - status
+    SessionId:
+      type: string
+      description: Unique id of device session
+      example: "123e4567-e89b-12d3-a456-426614174000"
+    Session:
+      type: object
+      properties:
+        sessionId:
+          $ref: "#/components/schemas/SessionId"
+        status:
+          $ref: "#/components/schemas/SessionStatus"
+        device:
+          type: object
+          properties:
+            deviceName:
+              type: string
+            os:
+              type: string
+              example: "ANDROID"
+            osVersion:
+              type: string
+              example: "15.0"
+            resolutionWidth:
+              description: Screen width in pixels
+              type: number
+              format: int32
+              example: 1080
+            resolutionHeight:
+              description: Screen height in pixels
+              type: number
+              format: int32
+              example: 2340
+            screenSize:
+              description: Screen size in inches
+              type: number
+              format: int32
+              example: 6
+        links:
+          type: object
+          properties:
+            ioWebsocketUrl:
+              type: string
+              example: "wss://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/io"
+            eventsWebsocketUrl:
+              type: string
+              example: "wss://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/events"
+              description: Websocket for retrieving realtime logs, device events, and some statistics
+            self:
+              type: string
+              example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
+
+    SessionCreation:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        status:
+          $ref: "#/components/schemas/SessionStatus"
+    SessionStatus:
+      type: string
+      enum:
+        - "PENDING"
+        - "CREATING"
+        - "ACTIVE"
+        - "CLOSING"
+        - "CLOSED"
+        - "ERRORED"
+      example: "CREATING"
