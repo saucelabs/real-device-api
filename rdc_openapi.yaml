@@ -26,10 +26,13 @@ paths:
             schema:
               type: object
               properties:
-                deviceId:
-                  type: string
-                  description: "The device on which to create the device session. If empty a device will be selected at random."
-                  example: "iPhone_16_real"
+                device:
+                  type: object
+                  properties:
+                    deviceId:
+                      type: string
+                      description: "The device on which to create the device session. If empty a device will be selected at random."
+                      example: "iPhone_16_real"
       responses:
         "201":
           description: Accepted
@@ -96,6 +99,44 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/openUrl:
+    post:
+      summary: Open a url (through browser) or a deeplink to an app
+      description: "Depending on a scheme the OS will decide how to open the url. 'https:' is usually handled by the browser, 'tel:' opens the telephone. If you registered a custom scheme for your app, your app will be opened. Please note: as of this moment deeplinking is only supported for iOS, for Android we will open everything in Chrome!"
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  example: "https://example.com"
+      responses:
+        "204":
+          description: Command executed successfully
+        "400":
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/errorSchemas/BadRequest"
+                  - $ref: "#/components/errorSchemas/DeviceIsNotReady"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
 components:
   securitySchemes:
     basicAuth:
@@ -118,7 +159,7 @@ components:
                 example: Device does not exist.
               detail:
                 type: string
-                example: The deviceId: Samsung XR does not exist. Please ensure you provide an existing device Id.
+                example: 'The deviceId "Samsung XR" does not exist. Please ensure you provide an existing device Id.'
     NotAuthorized:
       description: Not Authorized
       content:
@@ -142,9 +183,15 @@ components:
           schema:
             type: object
             properties:
-              message:
+              type:
+                type: string
+                example: about:blank
+              title:
                 type: string
                 example: Device session not found
+              detail:
+                type: string
+                example: The device session '123e4567-e89b-12d3-a456-426614174000' was not found, please ensure it exists and you have access to it.
     TooManyRequests:
       description: Too many requests
       content:
@@ -189,6 +236,31 @@ components:
               status:
                 $ref: "#/components/schemas/SessionStatus"
                 example: CLOSING
+  errorSchemas:
+    DeviceIsNotReady:
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Device not ready.
+        detail:
+          type: string
+          example: "You tried to interact with the device, but the state of you session is 'PENDING'. The state needs to be 'ACTIVE', if you want to interact with the device."
+    BadRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Device does not exist.
+        detail:
+          type: string
+          example: 'The deviceId "Samsung XR" does not exist. Please ensure you provide an existing device Id.'
   schemas:
     DeviceStatus:
       type: string
