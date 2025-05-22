@@ -13,6 +13,24 @@ servers:
 security:
   - basicAuth: []
 paths:
+  /devices/status:
+    get:
+      summary: "List the status of all devices"
+      description: "Lists the current status of all devices. For private devices, additional details are available, including the precise state and current user. The data reflects the device state with a maximum delay of 1 second at the 99th percentile (p99)."
+      tags:
+        - "Device Catalog"
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Device"
   /sessions:
     post:
       summary: "Allocate a device and create a new session"
@@ -278,6 +296,7 @@ components:
         - "MAINTENANCE"
         - "OFFLINE"
       example: "IN_USE"
+      description: the current state of the device. For private devices you will se a more specific state. For public devices we present an aggregated state. If one device that shares a descriptorId is available, then the entire descriptor will be marked as available.
     Device:
       type: object
       properties:
