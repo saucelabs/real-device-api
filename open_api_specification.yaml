@@ -115,6 +115,16 @@ paths:
           description: The id of the device session
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rebootDevice:
+                  type: boolean
+                  default: false
+                  description: Perform a device reboot after session release. Only applicable for private devices.
       responses:
         "200":
           $ref: "#/components/responses/CloseDeviceSession"
