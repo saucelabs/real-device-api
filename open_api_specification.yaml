@@ -71,6 +71,14 @@ paths:
       description: Retrieves a list of device sessions, including pending, active and recently closed sessions.
       tags:
         - "Session Lifecycle"
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter out sessions returned based on status
+          schema:
+            $ref: "#/components/schemas/SessionStatus"
+
       responses:
         "200":
           description: OK
@@ -115,6 +123,12 @@ paths:
           description: The id of the device session
           schema:
             type: string
+        - name : rebootDevice
+          in: query
+          required: false
+          description: Perform a device reboot after session release. Only applicable for private devices.
+          schema:
+            $ref: "#/components/schemas/RebootDevice"
       responses:
         "200":
           $ref: "#/components/responses/CloseDeviceSession"
@@ -390,3 +404,6 @@ components:
         - "CLOSED"
         - "ERRORED"
       example: "CREATING"
+    RebootDevice:
+      type: boolean
+      default: false
