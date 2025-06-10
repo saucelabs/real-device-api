@@ -78,7 +78,12 @@ paths:
           description: Filter out sessions returned based on status
           schema:
             $ref: "#/components/schemas/SessionStatus"
-
+        - name: deviceId
+          in: query
+          required: false
+          description: The id of the device
+          schema:
+            type: string
       responses:
         "200":
           description: OK
