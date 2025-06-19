@@ -56,7 +56,7 @@ In the examples below, we will use `$BASE_URL` as a placeholder.
 
 ## Authentication
 The API uses Basic Authentication. You will need your Sauce Labs username and access key to make requests. 
-You can find these in the `Account -> User Settings` section of the Sauce Labs app.
+You can find these in the `Account -> User Settings` section of the Sauce Labs UI.
 
 All examples use curl and expect you to replace `YOUR_USERNAME` and `YOUR_ACCESS_KEY` with your credentials.
 ```shell
