@@ -19,6 +19,25 @@ paths:
       description: "Lists the current status of all devices. For private devices, additional details are available, including the precise state and current user. The data reflects the device state with a maximum delay of 1 second at the 99th percentile (p99)."
       tags:
         - "Device Catalog"
+      parameters:
+        - name: state
+          in: query
+          description: Filter by device state
+          style: form
+          explode: true
+          schema:
+            $ref: "#/components/schemas/DeviceStatus"
+        - name: privateOnly
+          in: query
+          description: Show only private devices for the authenticated customer
+          schema:
+            type: boolean
+        - name: deviceId
+          in: query
+          description: Filter by device identifier. Supports expressions such as defined in Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)
+          schema:
+            type: string
+            example: "iPhone.*"
       responses:
         "200":
           description: Ok
