@@ -56,7 +56,6 @@ paths:
                       type: string
                       enum: [android, ios]
                       example: ios
-                      required: false
       responses:
         "200":
           description: Ok
