@@ -203,7 +203,12 @@ components:
     basicAuth:
       type: http
       scheme: basic
-      description: Basic authentication with username and access key
+      description: |
+        HTTP Basic Authentication using your Sauce Labs credentials.
+        - **Username**: Your Sauce Labs username.
+        - **Password**: Your Sauce Labs access key.
+        
+        You can find both your username and access key on the **Account > User Settings** page in the Sauce Labs UI.
   responses:
     BadRequest:
       description: Bad Request
