@@ -1,4 +1,4 @@
-# Real Device API
+done # Real Device API
 > This API is currently under active development and is subject to change.
 
 This repository contains documentation for the Sauce Labs Real Device API. This API provides remote access to our pool of real devices, allowing you to automate and automate them using the provided HTTP and WebSocket interfaces.
@@ -36,9 +36,9 @@ The WebSocket API provides real-time streams of data from your device sessions. 
 }
 ```
 
-# Usage Example: Real Device API
+# Usage Example: Sauce Labs Real Device API v2
 
-The Real Device API allows you to programmatically interact with real mobile devices in the Sauce Labs cloud 
+Sauce Labs Real Device API v2 allows you to programmatically interact with real mobile devices in the Sauce Labs cloud 
 for your testing purposes. This guide provides the information you need to get started with checking device status, 
 creating and managing test sessions, and streaming logs.
 
