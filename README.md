@@ -50,7 +50,7 @@ Sauce Labs offers three production environments for the Real Device Cloud (RDC) 
 
 ```shell
 export BASE_URL="https://api.us-west-1.saucelabs.com/rdc/v2"
-export AUTH={SAUCE_USERNAME}:{SAUCE_ACCESS_KEY}
+export AUTH="{SAUCE_USERNAME}:{SAUCE_ACCESS_KEY}"
 ```
 
 In the examples below, we will use `$BASE_URL` and `$AUTH` as a placeholder.
