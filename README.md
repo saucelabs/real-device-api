@@ -50,9 +50,10 @@ Sauce Labs offers three production environments for the Real Device Cloud (RDC) 
 
 ```shell
 export BASE_URL="https://api.us-west-1.saucelabs.com/rdc/v2"
+export AUTH={SAUCE_USERNAME}:{SAUCE_ACCESS_KEY}
 ```
 
-In the examples below, we will use `$BASE_URL` as a placeholder.
+In the examples below, we will use `$BASE_URL` and `$AUTH` as a placeholder.
 
 ## Authentication
 The API uses Basic Authentication. You will need your Sauce Labs username and access key to make requests. 
@@ -60,8 +61,7 @@ You can find these in the `Account -> User Settings` section of the Sauce Labs U
 
 All examples use curl and expect you to replace `YOUR_USERNAME` and `YOUR_ACCESS_KEY` with your credentials.
 ```shell
-curl -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
-  "$BASE_URL/devices/status"
+curl -u $AUTH "$BASE_URL/devices/status"
 ```
 
 ## Quick Start Examples
@@ -72,7 +72,7 @@ You can retrieve a list of all available real devices and filter them based on v
 #### List All Devices
 ```shell
 curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+  -u $AUTH \
   "$BASE_URL/devices/status"
 ```
 
@@ -86,28 +86,21 @@ The `/devices/status` endpoint supports the following query parameters for filte
 #### Examples:
 ```shell
 # Get all devices
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
-  "$BASE_URL/devices/status"
+curl -X GET -u $AUTH "$BASE_URL/devices/status"
 
 # Filter by device state
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
-  "$BASE_URL/devices/status?state=AVAILABLE"
+curl -X GET -u $AUTH "$BASE_URL/devices/status?state=AVAILABLE"
 
 # Show only private devices
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+curl -X GET -u $AUTH \
   "$BASE_URL/devices/status?privateOnly=true"
 
 # Filter by device identifier (supports regex patterns)
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+curl -X GET -u $AUTH \
   "$BASE_URL/devices/status?deviceId=iPhone.*"
 
 # Combine multiple filters
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+curl -X GET -u $AUTH \
   "$BASE_URL/devices/status?state=AVAILABLE&privateOnly=true&deviceId=iPhone.*"
 ```
 
@@ -141,8 +134,7 @@ To start a new testing session, you need to make a `POST` request to the `/sessi
 
 #### Example
 ```shell
-curl -X POST \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+curl -X POST -u $AUTH \
   -H "Content-Type: application/json" \
   -d '{
     "device": {
@@ -189,23 +181,16 @@ You can combine both filters to get more specific results, such as finding all a
 ##### Examples 
 ```shell
 # Get all sessions
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
-  "$BASE_URL/sessions"
+curl -X GET -u $AUTH "$BASE_URL/sessions"
 
 # Filter by session status
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
-  "$BASE_URL/sessions?status=ACTIVE"
+curl -X GET -u $AUTH "$BASE_URL/sessions?status=ACTIVE"
 
 # Filter by device ID
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
-  "$BASE_URL/sessions?deviceId=iPhone_16_real"
+curl -X GET -u $AUTH "$BASE_URL/sessions?deviceId=iPhone_16_real"
 
 # Combine multiple filters - active sessions on specific device
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+curl -X GET -u $AUTH \
   "$BASE_URL/sessions?status=ACTIVE&deviceId=iPhone_16_real"
 ```
 
@@ -239,9 +224,7 @@ curl -X GET \
 #### Get Session Details
 Retrieve information for a single session using its `SESSION_ID`.
 ```shell
-curl -X GET \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
-  "$BASE_URL/sessions/{session_id}"
+curl -X GET -u $AUTH "$BASE_URL/sessions/{session_id}"
 ```
 
 ##### Example Response
@@ -273,21 +256,19 @@ Terminate a device session and release the device. When you close a session, its
 ##### Session Closure Options
 The session closure endpoint provides flexible termination options:
 
-- Basic Closure: Immediately terminates the session and releases the device
-- Reboot Option: **Available only for private devices**, performs a complete device reboot after session closure
+- Basic Closure: This is the default behavior. The session is terminated, and a standard cleaning process is executed on the device. Once the cleaning process is complete, the device is marked as AVAILABLE and returned to the device pool.
+- Reboot Option: **Available only for private devices**, The session is terminated, the standard cleaning process is executed, and finally, the device is rebooted. This ensures the device is in a pristine state before being returned to the pool.
 
 ***Note:*** The `rebootDevice` parameter only works with private devices. Public/shared devices cannot be rebooted through the API.
 
 ##### Examples 
 ```shell
 # Basic session termination
-curl -X DELETE \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+curl -X DELETE -u $AUTH \
   $BASE_URL/sessions/123e4567-e89b-12d3-a456-426614174000
 
 # Close session with device reboot (private devices only)
-curl -X DELETE \
-  -u "YOUR_USERNAME:YOUR_ACCESS_KEY" \
+curl -X DELETE -u $AUTH \
   "$BASE_URL/sessions/123e4567-e89b-12d3-a456-426614174000?rebootDevice=true"
 ```
 
@@ -338,14 +319,12 @@ brew install websocat
 
 ```shell
 # Set your credentials and session ID
-USERNAME="YOUR_USERNAME"
-ACCESS_KEY="YOUR_ACCESS_KEY"
 SESSION_ID="YOUR_SESSION_ID"
 DATA_CENTER="us-west-1" # or eu-central-1, us-east-4
 
 
 # Generate a Base64 authentication token
-AUTH_TOKEN=$(echo -n "$USERNAME:$ACCESS_KEY" | base64)
+AUTH_TOKEN=$(echo -n $AUTH | base64)
 
 echo "Auth token: $AUTH_TOKEN"
 
@@ -366,13 +345,11 @@ npm install -g wscat
 
 ```shell
 # Set your credentials and session ID
-USERNAME="YOUR_USERNAME"
-ACCESS_KEY="YOUR_ACCESS_KEY"
 SESSION_ID="YOUR_SESSION_ID"
 DATA_CENTER="us-west-1" # or eu-central-1, us-east-4
 
 # Generate a Base64 authentication token
-AUTH_TOKEN=$(echo -n "$USERNAME:$ACCESS_KEY" | base64)
+AUTH_TOKEN=$(echo -n $AUTH | base64)
 
 echo "Auth token: $AUTH_TOKEN"
 
