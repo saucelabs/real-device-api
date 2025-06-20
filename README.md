@@ -35,3 +35,8 @@ The WebSocket API provides real-time streams of data from your device sessions. 
     "message":"2025-05-07 18:11:20.000 INFO: trustd(libxpc.dylib)[..]"
 }
 ```
+
+## Getting Started
+
+For detailed usage examples and a step-by-step guide to interacting with the Sauce Labs Read Devices API v2, 
+please see our [Integration Guide](INTEGRATION_GUIDE.md).
