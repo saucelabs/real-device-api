@@ -50,8 +50,6 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Device"
-        "400":
-          $ref: "#/components/responses/NotAuthorized"
   /sessions:
     post:
       summary: "Allocate a device and create a new session"
@@ -196,8 +194,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                  - $ref: "#/components/responses/BadRequest"
-                  - $ref: "#/components/responses/DeviceIsNotReady"
+                  - $ref: "#/components/errorSchemas/BadRequest"
+                  - $ref: "#/components/errorSchemas/DeviceIsNotReady"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 components:
@@ -224,10 +222,10 @@ components:
                 example: about:blank
               title:
                 type: string
-                example: Bad Request.
+                example: Device does not exist.
               detail:
                 type: string
-                example: 'Bad Request.'
+                example: 'The deviceId "Samsung XR" does not exist. Please ensure you provide an existing device Id.'
     NotAuthorized:
       description: Not Authorized
       content:
@@ -240,14 +238,14 @@ components:
                 example: about:blank
               title:
                 type: string
-                example: Not Authorized.
+                example: Unauthorized
               detail:
                 type: string
-                example: 'Not Authorized.'
+                example: You are not authorized to view this resource.
     DeviceSessionNotFound:
       description: Not Found
       content:
-        application/problem+json:
+        application/json:
           schema:
             type: object
             properties:
@@ -256,14 +254,14 @@ components:
                 example: about:blank
               title:
                 type: string
-                example: Device Session Not Found.
+                example: Device session not found
               detail:
                 type: string
-                example: 'Device Session Not Found.'
+                example: The device session '123e4567-e89b-12d3-a456-426614174000' was not found, please ensure it exists and you have access to it.
     TooManyRequests:
       description: Too many requests
       content:
-        application/problem+json:
+        application/json:
           schema:
             type: object
             properties:
@@ -272,14 +270,14 @@ components:
                 example: about:blank
               title:
                 type: string
-                example: Too many concurrent requests.
+                example: You have been sending yoo many requests.
               detail:
                 type: string
-                example: 'Too many concurrent request.'
+                example: You have exceeded the rate limit of 60 req/s. Please ensure you are not sending too many requests.
     BadGateway:
       description: Bad gateway
       content:
-        application/problem+json:
+        application/json:
           schema:
             type: object
             properties:
@@ -288,10 +286,10 @@ components:
                 example: about:blank
               title:
                 type: string
-                example: No listener on device
+                example: Bad gateway
               detail:
                 type: string
-                example: 'No listener on device.'
+                example: No listener on device. Please retry and start a new session when this issue persists.
     CloseDeviceSession:
       description: Session is closing
       content:
@@ -304,22 +302,31 @@ components:
               state:
                 $ref: "#/components/schemas/SessionState"
                 example: CLOSING
+  errorSchemas:
     DeviceIsNotReady:
-      description: Device is not ready
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              type:
-                type: string
-                example: about:blank
-              title:
-                type: string
-                example: Device not ready.
-              detail:
-                type: string
-                example: "You tried to interact with the device, but the state of you session is 'PENDING'. The state needs to be 'ACTIVE', if you want to interact with the device."
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Device not ready.
+        detail:
+          type: string
+          example: "You tried to interact with the device, but the state of you session is 'PENDING'. The state needs to be 'ACTIVE', if you want to interact with the device."
+    BadRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Device does not exist.
+        detail:
+          type: string
+          example: 'The deviceId "Samsung XR" does not exist. Please ensure you provide an existing device Id.'
   schemas:
     DeviceStatus:
       type: string
