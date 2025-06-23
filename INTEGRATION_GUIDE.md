@@ -41,7 +41,7 @@ curl -X GET \
 #### Device Filtering Options
 The `/devices/status` endpoint supports the following query parameters for filtering:
 
-- `state`: Filter by device status. Possible values: `AVAILABLE`, `IN_USE`, `CLEANING`, `REBOOTING`, `MAINTENANCE`, `OFFLINE`.
+- `state`: Filter by device state. Possible values: `AVAILABLE`, `IN_USE`, `CLEANING`, `REBOOTING`, `MAINTENANCE`, `OFFLINE`.
 - `privateOnly`: Set to `true` to show only your account's private devices.
 - `deviceId`:  Filter by a device identifier. This field supports regular expressions (e.g., `iPhone.*`).
 
@@ -112,7 +112,7 @@ curl -X POST -u $AUTH \
 ```json
 {
   "id": "{session_id}",
-  "status": "PENDING",
+  "state": "PENDING",
   "links": null,
   "device": null,
   "error": null
@@ -123,12 +123,12 @@ curl -X POST -u $AUTH \
 Once a session is created, you can list your sessions, get details for a specific session, and close it when you are done.
 
 #### List All Sessions
-You can filter sessions by `status` and `deviceId.`
+You can filter sessions by `state` and `deviceId.`
 
 ##### Session Filtering Options
 The `/sessions` endpoint supports the following filters:
 
-- `status`: Filter by session status
+- `state`: Filter by session state
     * `PENDING` - Session is waiting to be created
     * `CREATING` - Session is being set up
     * `ACTIVE` - Session is ready for interaction
@@ -136,7 +136,7 @@ The `/sessions` endpoint supports the following filters:
     * `CLOSED` - Session has ended
     * `ERRORED` - Session encountered an error
 
-- `deviceId`: Filter by specific device identifier (e.g., iPhone_16_real, Samsung_Galaxy_S21_real, iPhone.*)
+- `deviceId`: Filter by specific device identifier (e.g., `iPhone_16_real`, `Samsung_Galaxy_S21_real`, `iPhone.*`)
 
 You can combine both filters to get more specific results, such as finding all active sessions on a particular device.
 
@@ -145,15 +145,15 @@ You can combine both filters to get more specific results, such as finding all a
 # Get all sessions
 curl -X GET -u $AUTH "$BASE_URL/sessions"
 
-# Filter by session status
-curl -X GET -u $AUTH "$BASE_URL/sessions?status=ACTIVE"
+# Filter by session state
+curl -X GET -u $AUTH "$BASE_URL/sessions?state=ACTIVE"
 
 # Filter by device ID
 curl -X GET -u $AUTH "$BASE_URL/sessions?deviceId=iPhone_16_real"
 
 # Combine multiple filters - active sessions on specific device
 curl -X GET -u $AUTH \
-  "$BASE_URL/sessions?status=ACTIVE&deviceId=iPhone_16_real"
+  "$BASE_URL/sessions?state=ACTIVE&deviceId=iPhone_16_real"
 ```
 
 ##### Example Response
@@ -162,7 +162,7 @@ curl -X GET -u $AUTH \
   "sessions": [
     {
       "sessionId": "123e4567-e89b-12d3-a456-426614174000",
-      "status": "ACTIVE",
+      "state": "ACTIVE",
       "device": {
         "deviceDescriptorId": "Samsung_Galaxy_S8_real2",
         "deviceName": "Samsung Galaxy S8",
@@ -193,7 +193,7 @@ curl -X GET -u $AUTH "$BASE_URL/sessions/{session_id}"
 ```json
 {
   "sessionId": "123e4567-e89b-12d3-a456-426614174000",
-  "status": "ACTIVE",
+  "state": "ACTIVE",
   "device": {
     "deviceDescriptorId": "Samsung_Galaxy_S8_real2",
     "deviceName": "Samsung Galaxy S8",
@@ -213,7 +213,7 @@ curl -X GET -u $AUTH "$BASE_URL/sessions/{session_id}"
 ```
 
 #### Close a Session
-Terminate a device session and release the device. When you close a session, its status will transition from `ACTIVE` → `CLOSING` → `CLOSED`.
+Terminate a device session and release the device. When you close a session, its state will transition from `ACTIVE` → `CLOSING` → `CLOSED`.
 
 ##### Session Closure Options
 The session closure endpoint provides flexible termination options:
@@ -238,7 +238,7 @@ curl -X DELETE -u $AUTH \
 ```yaml
 {
   "id": "f64b3cc1-7c56-42b5-bb59-d31711337ce9",
-  "status": "CLOSING",
+  "state": "CLOSING",
   "links": {
     "ioWebsocketUrl": "wss://api.staging.saucelabs.net/rdc/v2/socket/alternativeIo/0501a5ee-76e1-4b1e-8302-82379025a275",
     "eventsWebsocketUrl": "wss://api.staging.saucelabs.net/rdc/v2/socket/companion/0501a5ee-76e1-4b1e-8302-82379025a275",
@@ -262,7 +262,7 @@ curl -X DELETE -u $AUTH \
 You can connect to a WebSocket to receive real-time logs and events from an active session.
 
 ***Prerequisites:***
-- Active device session (status must be `ACTIVE`)
+- Active device session (state must be `ACTIVE`)
 - The `eventsWebsocketUrl` from the session details response.
 - A WebSocket client tool like `websocat` or `wscat`.
 
@@ -295,7 +295,7 @@ websocat -H="Authorization: Basic $AUTH_TOKEN" "wss://api.${DATA_CENTER}.saucela
 ```
 
 #### Alternative Tool: wscat (Node.js)
-If you have Node.js installed, you can use wscat.
+If you have Node.js installed, you can use `wscat`.
 
 ##### Installation:
 ```shell

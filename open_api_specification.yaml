@@ -90,12 +90,12 @@ paths:
       tags:
         - "Session Lifecycle"
       parameters:
-        - name: status
+        - name: state
           in: query
           required: false
           description: Filter out sessions returned based on status
           schema:
-            $ref: "#/components/schemas/SessionStatus"
+            $ref: "#/components/schemas/SessionState"
         - name: deviceId
           in: query
           required: false
@@ -299,8 +299,8 @@ components:
             properties:
               sessionId:
                 $ref: "#/components/schemas/SessionId"
-              status:
-                $ref: "#/components/schemas/SessionStatus"
+              state:
+                $ref: "#/components/schemas/SessionState"
                 example: CLOSING
   errorSchemas:
     DeviceIsNotReady:
@@ -373,8 +373,8 @@ components:
       properties:
         sessionId:
           $ref: "#/components/schemas/SessionId"
-        status:
-          $ref: "#/components/schemas/SessionStatus"
+        state:
+          $ref: "#/components/schemas/SessionState"
         device:
           type: object
           properties:
@@ -414,15 +414,14 @@ components:
             self:
               type: string
               example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
-
     SessionCreation:
       type: object
       properties:
         sessionId:
           type: string
-        status:
-          $ref: "#/components/schemas/SessionStatus"
-    SessionStatus:
+        state:
+          $ref: "#/components/schemas/SessionState"
+    SessionState:
       type: string
       enum:
         - "PENDING"
