@@ -196,6 +196,67 @@ paths:
           $ref: "#/components/responses/DeviceIsNotReady"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/installApp:
+    post:
+      summary: Install an app from App Storage
+      description: Install an app on the device. The installation will take place in the background. Use listAppInstallations to query for status.
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppInstallation"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/AppInstallationStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/listAppInstallations:
+    post:
+      summary: List ongoing, completed and failed app installations
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appInstallations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AppInstallationStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
 components:
   securitySchemes:
     basicAuth:
@@ -395,3 +456,78 @@ components:
     RebootDevice:
       type: boolean
       default: false
+    AppInstallationStatus:
+      type: object
+      description: Status of an ongoing or completed app installation process
+      properties:
+        installationId:
+          type: string
+          description: "Identifier of this app installation process"
+        app:
+          type: string
+          description: "This should be the location of your app in Sauce Labs App Storage Service (e.g., storage:filename=myapp.apk or storage:uuid)"
+          example: "storage:c78ec45e-ea3e-ac6a-b094-00364171addb"
+        status:
+          type: string
+          enum:
+            - "PENDING"
+            - "FINISHED"
+            - "ERROR"
+    AppInstallation:
+      type: object
+      description: Configuration for installing an app on a device.
+      properties:
+        app:
+          type: string
+          description: "This should be the location of your app in Sauce Labs App Storage Service (e.g., storage:filename=myapp.apk or storage:uuid)"
+          example: "storage:c78ec45e-ea3e-ac6a-b094-00364171addb"
+        enableInstrumentation:
+          type: boolean
+          default: true
+          description: |
+            Controls Sauce Labs' app instrumentation (which includes **app re-signing for iOS**) for Real Device testing.
+            For iOS, this process is **vital for app installation as it ensures the app is correctly signed and provisioned to run on Sauce Labs' diverse real devices.** This step is necessary to meet Apple's security requirements on these cloud devices. Enabling this also unlocks advanced features on both platforms.
+
+            **Automatic Behavior**: This setting is automatically forced to `true` if:
+            - The iOS app is signed with an ad-hoc certificate.
+            - Any instrumentation-dependent advanced features are enabled (for iOS or Android).
+
+            **Impact of `false`**:
+            - iOS: App installation will likely fail, as the app may not meet the code signing and provisioning requirements for cloud devices.
+            - Android: Advanced features will be disabled (though the app may still install).
+
+            For best results and compatibility, it's recommended to allow this to be `true`
+          example: true
+        features:
+          type: object
+          properties:
+            networkCapture:
+              type: boolean
+              default: false
+              description: "Enable system-wide network capture."
+              example: false
+            deviceVitals:
+              type: boolean
+              default: false
+              description: "Collect vitals from device while app is running."
+              example: false
+            imageInjection:
+              type: boolean
+              default: false
+              description: "Enable image injection through camera API."
+              example: false
+            biometricsInterception:
+              type: boolean
+              default: false
+              description: "Enable interception of biometrics checks."
+              example: false
+            bypassScreenshotRestriction:
+              type: boolean
+              default: false
+              example: false
+            errorReporting:
+              type: boolean
+              default: false
+              example: false
+      required:
+        - app
