@@ -237,7 +237,7 @@ components:
     DeviceSessionNotFound:
       description: Not Found
       content:
-        application/problem+json:
+        application/json:
           schema:
             type: object
             properties:
