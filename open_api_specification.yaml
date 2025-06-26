@@ -32,7 +32,7 @@ paths:
           description: Show only private devices for the authenticated customer
           schema:
             type: boolean
-        - name: deviceId
+        - name: deviceName
           in: query
           description: Filter by device identifier. Supports expressions such as defined in Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)
           schema:
@@ -68,9 +68,9 @@ paths:
                 device:
                   type: object
                   properties:
-                    deviceId:
+                    deviceName:
                       type: string
-                      description: "The device on which to create the device session. If empty a device will be selected at random."
+                      description: Filter by device identifier. Supports expressions such as defined in Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)
                       example: "iPhone_16_real"
                     os:
                       description: Filter by operating system (Android or iOS). The enum is case insensitive.
@@ -98,10 +98,10 @@ paths:
           description: Filter out sessions returned based on state
           schema:
             $ref: "#/components/schemas/SessionState"
-        - name: deviceId
+        - name: deviceName
           in: query
           required: false
-          description: The id of the device
+          description: Filter by device identifier. Supports expressions such as defined in Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)
           schema:
             type: string
       responses:
@@ -400,8 +400,12 @@ components:
         device:
           type: object
           properties:
+            descriptor:
+              type: string
+              example: "iPhone_13_real"
             deviceName:
               type: string
+              example: "iPhone 13 real private"
             os:
               type: string
               example: "ANDROID"
