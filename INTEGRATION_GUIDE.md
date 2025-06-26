@@ -26,6 +26,16 @@ All examples use curl and expect you to replace `YOUR_USERNAME` and `YOUR_ACCESS
 curl -u $AUTH "$BASE_URL/devices/status"
 ```
 
+## Device Identification and Filtering
+A key concept in the Real Device API is how devices are identified and filtered. When you query for devices or request a device for a session, you will interact with two primary fields:
+
+- `descriptor`: A static identifier for a device (e.g., `iPhone_13_real`). This is consistent across the Real Device API
+- `deviceName`: A more descriptive, user-friendly name (e.g., `iPhone 13 real private`)
+
+When you use the `deviceName` query parameter in an API request, you are not just filtering on the `deviceName` field. Instead, this parameter accepts either a specific device ID or a regular expression and applies the filter to both the `descriptor` and `deviceName` fields.
+
+This is the standard behavior for all endpoints that accept a `deviceName` parameter.
+
 ## Quick Start Examples
 
 ### Check Device Status
@@ -43,7 +53,7 @@ The `/devices/status` endpoint supports the following query parameters for filte
 
 - `state`: Filter by device state. Possible values: `AVAILABLE`, `IN_USE`, `CLEANING`, `REBOOTING`, `MAINTENANCE`, `OFFLINE`.
 - `privateOnly`: Set to `true` to show only your account's private devices.
-- `deviceId`:  Filter by a device identifier. This field supports regular expressions (e.g., `iPhone.*`).
+- `deviceName`:  Filter by a device identifier. This field supports regular expressions (e.g., `iPhone.*`) and matches against both the device `descriptor` and `deviceName` fields.
 
 #### Examples:
 ```shell
@@ -59,11 +69,11 @@ curl -X GET -u $AUTH \
 
 # Filter by device identifier (supports regex patterns)
 curl -X GET -u $AUTH \
-  "$BASE_URL/devices/status?deviceId=iPhone.*"
+  "$BASE_URL/devices/status?deviceName=iPhone.*"
 
 # Combine multiple filters
 curl -X GET -u $AUTH \
-  "$BASE_URL/devices/status?state=AVAILABLE&privateOnly=true&deviceId=iPhone.*"
+  "$BASE_URL/devices/status?state=AVAILABLE&privateOnly=true&deviceName=iPhone.*"
 ```
 
 #### Example Response
@@ -92,7 +102,7 @@ curl -X GET -u $AUTH \
 
 ### Create a Device Session
 To start a new testing session, you need to make a `POST` request to the `/sessions` endpoint.
-> ***Note:*** The `deviceId` and `os` parameters in the request body are optional. If they are omitted, Sauce Labs will automatically select an available device for your session.
+> ***Note:*** The `deviceName` and `os` parameters in the request body are optional. If they are omitted, Sauce Labs will automatically select an available device for your session.
 
 #### Example
 ```shell
@@ -100,7 +110,7 @@ curl -X POST -u $AUTH \
   -H "Content-Type: application/json" \
   -d '{
     "device": {
-      "deviceId": "iPhone_16_real",
+      "deviceName": "iPhone_16_real",
       "os": "ios"
     }
   }' \
@@ -123,7 +133,7 @@ curl -X POST -u $AUTH \
 Once a session is created, you can list your sessions, get details for a specific session, and close it when you are done.
 
 #### List All Sessions
-You can filter sessions by `state` and `deviceId.`
+You can filter sessions by `state` and `deviceName.`
 
 ##### Session Filtering Options
 The `/sessions` endpoint supports the following filters:
@@ -136,7 +146,7 @@ The `/sessions` endpoint supports the following filters:
     * `CLOSED` - Session has ended
     * `ERRORED` - Session encountered an error
 
-- `deviceId`: Filter by specific device identifier (e.g., `iPhone_16_real`, `Samsung_Galaxy_S21_real`, `iPhone.*`)
+- `deviceName`: Filter by specific device identifier (e.g., `iPhone_16_real`, `Samsung_Galaxy_S21_real`, `iPhone.*`, `Samsung.*`)
 
 You can combine both filters to get more specific results, such as finding all active sessions on a particular device.
 
@@ -149,11 +159,11 @@ curl -X GET -u $AUTH "$BASE_URL/sessions"
 curl -X GET -u $AUTH "$BASE_URL/sessions?state=ACTIVE"
 
 # Filter by device ID
-curl -X GET -u $AUTH "$BASE_URL/sessions?deviceId=iPhone_16_real"
+curl -X GET -u $AUTH "$BASE_URL/sessions?deviceName=iPhone_16_real"
 
 # Combine multiple filters - active sessions on specific device
 curl -X GET -u $AUTH \
-  "$BASE_URL/sessions?state=ACTIVE&deviceId=iPhone_16_real"
+  "$BASE_URL/sessions?state=ACTIVE&deviceName=iPhone_16_real"
 ```
 
 ##### Example Response
@@ -164,7 +174,7 @@ curl -X GET -u $AUTH \
       "sessionId": "123e4567-e89b-12d3-a456-426614174000",
       "state": "ACTIVE",
       "device": {
-        "deviceDescriptorId": "Samsung_Galaxy_S8_real2",
+        "descriptor": "Samsung_Galaxy_S8_real2",
         "deviceName": "Samsung Galaxy S8",
         "os": "ANDROID",
         "osVersion": "9",
@@ -195,7 +205,7 @@ curl -X GET -u $AUTH "$BASE_URL/sessions/{session_id}"
   "sessionId": "123e4567-e89b-12d3-a456-426614174000",
   "state": "ACTIVE",
   "device": {
-    "deviceDescriptorId": "Samsung_Galaxy_S8_real2",
+    "descriptor": "Samsung_Galaxy_S8_real2",
     "deviceName": "Samsung Galaxy S8",
     "os": "ANDROID",
     "osVersion": "9",
@@ -246,7 +256,7 @@ curl -X DELETE -u $AUTH \
     "self": "https://api.staging.saucelabs.net/rdc/v2/sessions/f64b3cc1-7c56-42b5-bb59-d31711337ce9"
   },
   "device": {
-    "deviceDescriptorId": "Samsung_Galaxy_S8_real2",
+    "descriptor": "Samsung_Galaxy_S8_real2",
     "deviceName": "Samsung Galaxy S8",
     "os": "ANDROID",
     "osVersion": "9",
