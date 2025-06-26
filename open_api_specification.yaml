@@ -257,6 +257,289 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
+  /sessions/{sessionId}/device/proxy/http/{targetHost}/{targetPort}/{targetPath}:
+    get:
+      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided GET request and proxies the response from the server as the proxy in the device receives it
+      tags:
+        - "HTTP Proxy"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+        - name: targetHost
+          in: path
+          required: true
+          description: The target host to make the request to
+          schema:
+            type: string
+            example: "localhost"
+        - name: targetPort
+          in: path
+          required: true
+          description: The port the target host is listening in
+          schema:
+            type: string
+            example: "8100"
+        - name: targetPath
+          in: path
+          required: true
+          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          schema:
+            type: string
+            example: "status"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    post:
+      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided POST request and proxies the response from the server as the proxy in the device receives it
+      tags:
+        - "HTTP Proxy"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+        - name: targetHost
+          in: path
+          required: true
+          description: The target host to make the request to
+          schema:
+            type: string
+            example: "localhost"
+        - name: targetPort
+          in: path
+          required: true
+          description: The port the target host is listening in
+          schema:
+            type: string
+            example: "8100"
+        - name: targetPath
+          in: path
+          required: true
+          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          schema:
+            type: string
+            example: "status"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    put:
+      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided PUT request and proxies the response from the server as the proxy in the device receives it
+      tags:
+        - "HTTP Proxy"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+        - name: targetHost
+          in: path
+          required: true
+          description: The target host to make the request to
+          schema:
+            type: string
+            example: "localhost"
+        - name: targetPort
+          in: path
+          required: true
+          description: The port the target host is listening in
+          schema:
+            type: string
+            example: "8100"
+        - name: targetPath
+          in: path
+          required: true
+          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          schema:
+            type: string
+            example: "status"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    delete:
+      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided DELETE request and proxies the response from the server as the proxy in the device receives it
+      tags:
+        - "HTTP Proxy"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+        - name: targetHost
+          in: path
+          required: true
+          description: The target host to make the request to
+          schema:
+            type: string
+            example: "localhost"
+        - name: targetPort
+          in: path
+          required: true
+          description: The port the target host is listening in
+          schema:
+            type: string
+            example: "8100"
+        - name: targetPath
+          in: path
+          required: true
+          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          schema:
+            type: string
+            example: "status"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    head:
+      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided HEAD request and proxies the response from the server as the proxy in the device receives it
+      tags:
+        - "HTTP Proxy"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+        - name: targetHost
+          in: path
+          required: true
+          description: The target host to make the request to
+          schema:
+            type: string
+            example: "localhost"
+        - name: targetPort
+          in: path
+          required: true
+          description: The port the target host is listening in
+          schema:
+            type: string
+            example: "8100"
+        - name: targetPath
+          in: path
+          required: true
+          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          schema:
+            type: string
+            example: "status"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    options:
+      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided OPTIONS request and proxies the response from the server as the proxy in the device receives it
+      tags:
+        - "HTTP Proxy"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+        - name: targetHost
+          in: path
+          required: true
+          description: The target host to make the request to
+          schema:
+            type: string
+            example: "localhost"
+        - name: targetPort
+          in: path
+          required: true
+          description: The port the target host is listening in
+          schema:
+            type: string
+            example: "8100"
+        - name: targetPath
+          in: path
+          required: true
+          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          schema:
+            type: string
+            example: "status"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
 components:
   securitySchemes:
     basicAuth:
