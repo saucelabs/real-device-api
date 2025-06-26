@@ -26,6 +26,16 @@ All examples use curl and expect you to replace `YOUR_USERNAME` and `YOUR_ACCESS
 curl -u $AUTH "$BASE_URL/devices/status"
 ```
 
+## Device Identification and Filtering
+A key concept in the Real Device API is how devices are identified and filtered. When you query for devices or request a device for a session, you will interact with two primary fields:
+
+- `descriptor`: A static identifier for a device (e.g., `iPhone_13_real`). This is consistent across the Real Device API
+- `deviceName`: A more descriptive, user-friendly name (e.g., `iPhone 13 real private`)
+
+When you use the `deviceName` query parameter in an API request, you are not just filtering on the `deviceName` field. Instead, this parameter accepts either a specific device ID or a regular expression and applies the filter to both the `descriptor` and `deviceName` fields.
+
+This is the standard behavior for all endpoints that accept a `deviceName` parameter.
+
 ## Quick Start Examples
 
 ### Check Device Status
