@@ -257,6 +257,52 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/launchApp:
+    post:
+      summary: Launch an app on device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                bundleId:
+                  type: string
+                  description: Bundle identifier (iOS)
+                  example: "com.apple.XXX"
+                packageName:
+                  type: string
+                  description: Package Name of app to launch (Android)
+                  example: "com.android.XXX"
+                activityName:
+                  type: string
+                  description: Main Activity Name of app to launch (Android)
+                  example: "com.android.XXX.Activity"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
   /sessions/{sessionId}/device/proxy/http/{targetHost}/{targetPort}/{targetPath}:
     get:
       summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided GET request and proxies the response from the server as the proxy in the device receives it
