@@ -831,6 +831,11 @@ components:
 
             For best results and compatibility, it's recommended to allow this to be `true`
           example: true
+        launchAfterInstall:
+          type: boolean
+          default: false
+          description: "If set to `true`, the app will automatically launch after a successful installation."
+          example: true
         features:
           type: object
           properties:
