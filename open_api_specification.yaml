@@ -766,6 +766,10 @@ components:
               type: string
               example: "wss://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/events"
               description: Websocket for retrieving realtime logs, device events, and some statistics
+            liveViewUrl:
+              type: string
+              example: "https://app.staging.saucelabs.net/live/mobile/dataCenters/US/devices/Samsung_Galaxy_S8_real2/shared/123e4567-e89b-12d3-a456-426614174000"
+              description: Live test view for the openapi session
             self:
               type: string
               example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
