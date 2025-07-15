@@ -1,5 +1,5 @@
 # Real Device API
-> This API is currently under active development and is subject to change.
+> This API is currently under active development and is subject to change. Access is currently restricted to early adopters. If you would like access please get in contact with you Sauce Labs representative.
 
 This repository contains documentation for the Sauce Labs Real Device API. This API provides remote access to our pool of real devices, allowing you to automate and automate them using the provided HTTP and WebSocket interfaces.
 
