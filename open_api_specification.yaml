@@ -722,7 +722,7 @@ components:
     Session:
       type: object
       properties:
-        sessionId:
+        id:
           $ref: "#/components/schemas/SessionId"
         state:
           $ref: "#/components/schemas/SessionState"
@@ -772,7 +772,7 @@ components:
     SessionCreation:
       type: object
       properties:
-        sessionId:
+        id:
           type: string
         state:
           $ref: "#/components/schemas/SessionState"
