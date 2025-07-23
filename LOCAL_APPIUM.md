@@ -5,7 +5,7 @@ Although we encourage using [our hosted Appium solution](https://docs.saucelabs.
 
 ## Technical specification
 
-Appium requires a local ADB connection for Android devices, and a WDA forward for IOS.
+Appium requires a local ADB connection for Android devices, and a WDA forward for iOS.
 
 ### Android
 
@@ -37,13 +37,13 @@ GET /sessions/{session_id}
 
 Fetch the websocket URL in `links -> vusbUrl`
 
-3. Establish a port forward
+3. Establish an adb proxy between your local machine and our remote device
 
-You can use a tool like `websocat` to achieve this, using basic auth and passing the `sessionId` header with the openAPI session id. Please take a look at our example [api-connect script](#Example script) for more information.
+You can use a tool like `websocat` to achieve this, using basic auth and passing the `sessionId` header with the openAPI session id. The `vusbUrl` points to a websocket connection that encapsulates a binary adb connection to the device. Please take a look at our example [api-connect script](#Example script) for more information.
 
-### IOS
+### iOS
 
-For IOS, our solution consist in mounting the endpoint of the WebDriverAgent running in the device in a local port. This is possible leveraging the http forward endpoints in the OpenAPI
+For iOS, our solution consist in mounting the endpoint of the WebDriverAgent running in the device in a local port. This is possible leveraging the http forward endpoints in the OpenAPI
 
 #### Example workflow
 
@@ -71,9 +71,13 @@ GET /sessions/{session_id}
 
 3. Forward the WDA port
 
-Run a reverse proxy locally that exposes the WDA port in your desired local port. There are several tools to achieve this, for example [Caddy](https://caddyserver.com/).
+Our OpenAPI solution exposes an http proxy endpoint running in the device. Appium needs a WDA server listening in the localhost interface to connect with it using the http protocol. To achieve this, we run locally a reverse proxy to our http proxy endpoint that:
+* Handles the basic auth in OpenAPI
+* Converts the SSL encrypted https messages to plain http
+* Rewrites the request path so that the WDA endpoint is exposed in the root path
 
-The endpoint that the http calls need to be forwarded to is
+
+There are several tools to achieve this. Our reference implementation script uses [Caddy](https://caddyserver.com/). The endpoint that the http calls need to be forwarded to is
 
 ```
 /sessions/{session_id}//device/proxy/http/localhost/8100
@@ -91,7 +95,7 @@ In order for the script to run properly, you'll need the following tools install
 * `jq`
 * `websocat` (Android only)
 * `adb` (Android only)
-* `docker` (IOS only)
+* `docker` (iOS only)
 
 ### Usage
 
@@ -110,5 +114,5 @@ api-connect <sessionId>
 
 Simply provide a established OpenAPI sessionId and depending on the device OS it will:
 
-1. For IOS: Starts a local [Caddy](https://caddyserver.com/) that exposes the WDA endpoint in local port `8100`. You'll need then to pass the `webDriverAgentUrl` capability to your local Appium server pointing to this port on your loopback interface.
+1. For iOS: Starts a local [Caddy](https://caddyserver.com/) that exposes the WDA endpoint in local port `8100`. You'll need then to pass the `webDriverAgentUrl` capability to your local Appium server pointing to this port on your loopback interface.
 2. For Android: Forwards the device ADB connection to local port `50371` (can be modified in the script) and starts an ADB server connecting to this port.
