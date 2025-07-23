@@ -95,6 +95,15 @@ In order for the script to run properly, you'll need the following tools install
 
 ### Usage
 
+You'll need the following environment variables set:
+
+* `SAUCE_USERNAME`: Your SauceLabs user.
+* `SAUCE_ACCESS_KEY`: Your SauceLabs api access key.
+* `SAUCE_API_URL`: The OpenAPI URL. Depending on the environment can be one of
+    * https://api.us-west-1.saucelabs.com
+    * https://api.eu-central-1.saucelabs.com
+    * https://api.us-east-4.saucelabs.com
+
 ```
 api-connect <sessionId>
 ```

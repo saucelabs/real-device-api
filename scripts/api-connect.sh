@@ -170,7 +170,7 @@ Example capabilities:
   "appium:noReset": true,
   "appium:skipDeviceInitialization": true,
   "appium:udid": "auto",
-  "appium:webDriverAgentUrl": "http://127.0.0.1:8100"
+  "appium:webDriverAgentUrl": "http://localhost:$WDA_PORT"
 }
 EOF
     
