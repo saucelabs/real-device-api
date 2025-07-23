@@ -1,7 +1,7 @@
 # Local Appium over OpenAPI
 
 ## Introduction
-Although we encourage using [our hosted Appium solution](https://docs.saucelabs.com/mobile-apps/automated-testing/appium/), for some usecases it can be beneficial to run Appium locally. This guide aims to provide you with a quick start to run appium for Android and IOS devices.
+Although we encourage using [our hosted Appium solution](https://docs.saucelabs.com/mobile-apps/automated-testing/appium/), for some usecases it can be beneficial to run Appium locally. This guide is a sample on how to connect a local appium-server to our remote Android and iOS devices.
 
 ## Technical specification
 
