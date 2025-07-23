@@ -39,7 +39,7 @@ Fetch the websocket URL in `links -> vusbUrl`
 
 3. Establish a port forward
 
-You can use a tool like `websocat` to achieve this, using basic auth and passing the `sessionId` header with the openAPI session id. Please take a look at our example [api-connect script](scripts/api-connect.sh) for more information.
+You can use a tool like `websocat` to achieve this, using basic auth and passing the `sessionId` header with the openAPI session id. Please take a look at our example [api-connect script](#Example script) for more information.
 
 ### IOS
 
