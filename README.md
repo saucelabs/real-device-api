@@ -40,3 +40,7 @@ The WebSocket API provides real-time streams of data from your device sessions. 
 
 For detailed usage examples and a step-by-step guide to interacting with the Sauce Labs Read Devices API v2, 
 please see our [Integration Guide](INTEGRATION_GUIDE.md).
+
+## Local Appium
+
+For a quick start running Appium locally, please follow [our guide](./LOCAL_APPIUM.md) on the topic.
