@@ -305,7 +305,7 @@ paths:
 
   /sessions/{sessionId}/device/startAppiumServer:
     post:
-      summary: Starts an appium session attached to the device session
+      summary: Starts an appium server attached to the device session.
       tags:
         - "Device Interactions"
       parameters:
