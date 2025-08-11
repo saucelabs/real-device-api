@@ -2,7 +2,7 @@ openapi: "3.0.0"
 info:
   version: "1.0.0"
   title: "Real Device API"
-  x-last-modified: "2025-01-20"
+  x-last-modified: "2025-06-24"
 servers:
   - url: https://api.us-west-1.saucelabs.com/rdc/v2/
     description: us-west
@@ -10,9 +10,72 @@ servers:
     description: eu-central
   - url: https://api.us-east-4.saucelabs.com/rdc/v2/
     description: us-east
+  - url: https://api.staging.saucelabs.net/rdc/v2/
+    description: staging
 security:
   - basicAuth: []
+  - cookieAuth: []
 paths:
+  /devices:
+    get:
+      summary: Get a list of available devices
+      description: |
+        Returns a list of devices available for the authenticated user (public and private devices). 
+
+        Devices can be filtered down based on criteria to reduce response size.
+      tags:
+        - "Device Catalog"
+      parameters:
+        - name: os
+          in: query
+          description: Filter by operating system (Android or iOS)
+          schema:
+            type: string
+            enum: [android, ios]
+        - name: formFactor
+          in: query
+          description: Filter by form factor (tablet or phone), if ommitted both will be returned
+          schema:
+            type: string
+            enum: [tablet, phone]
+        - name: isPrivate
+          in: query
+          description: Filter by private or public device, if ommitted both will be returned
+          schema:
+            type: boolean
+        - name: osVersion
+          in: query
+          description: OS version. Supports expressions such as defined in Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)
+          schema:
+            type: string
+            example: "18.3.*"
+        - name: status
+          in: query
+          description: Filter by device status
+          style: form
+          explode: true
+          schema:
+            $ref: "#/components/schemas/DeviceStatus"
+        - name: deviceId
+          in: query
+          description: Filter by device identifier. Supports expressions such as defined in Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)
+          schema:
+            type: string
+            example: "iPhone.*"
+      responses:
+        "200":
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Device"
+        "403":
+          $ref: "#/components/responses/NotAuthorized"
   /devices/status:
     get:
       summary: "List the status of all devices"
@@ -77,15 +140,56 @@ paths:
                       type: string
                       enum: [android, ios]
                       example: ios
+                configuration:
+                  type: object
+                  properties:
+                    app:
+                      type: object
+                      $ref: "#/components/schemas/AppInstallation"
+                    otherApps:
+                      type: array
+                      items:
+                        type: object
+                        $ref: "#/components/schemas/OtherAppInstallation"
+                    tunnel:
+                      type: object
+                      $ref: "#/components/schemas/TunnelConfiguration"
+                    video:
+                      type: object
+                      $ref: "#/components/schemas/VideoConfiguration"
+                    security:
+                      type: object
+                      properties:
+                        devicePasscode:
+                          type: boolean
+                          default: false
+                          description: Should passcode be set when setting up session
+                    network:
+                      type: object
+                      properties:
+                        proxy:
+                          type: object
+                          $ref: "#/components/schemas/ProxySettings"
+                        networkProfile:
+                          type: string
+                          description: Name of the network profile to apply
+                    locale:
+                      type: string
+                      default: en_US
+                    location:
+                      type: object
+                      $ref: "#/components/schemas/Location"
       responses:
         "200":
-          description: Ok
+          description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionCreation"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
     get:
       summary: List device sessions
       description: Retrieves a list of device sessions, including pending, active and recently closed sessions.
@@ -164,10 +268,216 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/applySettings:
+    post:
+      summary: Change configuration of device, include locale, orientation and animations
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orientation:
+                  type: string
+                  description: The desired orientation
+                  enum:
+                    - "PORTRAIT"
+                    - "LANDSCAPE"
+                locale:
+                  type: string
+                animations:
+                  type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/listProcesses:
+    post:
+      summary: List process currently running on device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Process"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/killProcess:
+    post:
+      summary: Terminate a running process
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pid
+              properties:
+                pid:
+                  type: number
+                  description: Process id to terminate
+                  example: 36001
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/launchApp:
+    post:
+      summary: Launch an app on device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                bundleId:
+                  type: string
+                  description: Bundle identifier (iOS)
+                  example: "com.apple.XXX"
+                packageName:
+                  type: string
+                  description: Package Name of app to launch (Android)
+                  example: "com.android.XXX"
+                activityName:
+                  type: string
+                  description: Main Activity Name of app to launch (Android)
+                  example: "com.android.XXX.Activity"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/runXctests:
+    post:
+      summary: Run iOS xctests or xcuitests asynchronously
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+                - testBundleId
+              properties:
+                id:
+                  type: string
+                  description: Bundle identifier (iOS)
+                  example: "com.example.xcuitest"
+                environmentVariables:
+                  type: object
+                  additionalProperties:
+                    type: string
+                # TODO: make sure this is better than testPackage
+                # TODO: ask about withOrchestrator
+                # TODO: ask about sessionLimit
+                # TODO: ask about how to know if it completed
+                testBundleId:
+                  type: string
+                testRunner:
+                  type: string
+                testsToRun:
+                  type: array
+                  items:
+                    type: string
+                testsToSkip:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
   /sessions/{sessionId}/device/openUrl:
     post:
       summary: Open a url (through browser) or a deeplink to an app
-      description: "Depending on a scheme the OS will decide how to open the url. 'https:' is usually handled by the browser, 'tel:' opens the telephone. If you registered a custom scheme for your app, your app will be opened. Please note: as of this moment deeplinking is only supported for iOS, for Android we will open everything in Chrome!"
       tags:
         - "Device Interactions"
       parameters:
@@ -190,10 +500,180 @@ paths:
                   type: string
                   example: "https://example.com"
       responses:
-        "204":
+        "200":
           description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
         "400":
           $ref: "#/components/responses/DeviceIsNotReady"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/clearAppCache:
+      post:
+        summary: Clear app's cache (Android) or remove app's caches directory (iOS), simulating a fresh installation
+        tags:
+          - "Device Interactions"
+        parameters:
+          - name: sessionId
+            in: path
+            required: true
+            description: The id of the device session
+            schema:
+              type: string
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    description: Bundle identifier (iOS) or Package Name of app
+                    example: "com.saucelabs.demoapp"
+        responses:
+          "200":
+            description: Command executed successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+          "400":
+            $ref: "#/components/responses/BadRequest"
+          "404":
+            $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/executeShellCommand:
+    post:
+      summary: Execute an adb shell command on an Android device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - shellCommand
+              properties:
+                shellCommand:
+                  type: string
+                  description: The shell command to execute on the device
+                  example: "ls /data/local/tmp"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/takeScreenshot:
+    post:
+      summary: Take a screenshot from device
+      description: Takes a screenshot from a device, and returns a PNG representation.
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/injectImage:
+    post:
+      summary: Inject image to an app when imageInjection instrumentation is enabled
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: Attached png or jpg payload
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/performBiometricsAuthentication:
+    post:
+      summary: Simulate a biometrics authentication action
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - match
+              properties:
+                match:
+                  type: boolean
+                  example: true
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
@@ -258,9 +738,9 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
-  /sessions/{sessionId}/device/launchApp:
+  /sessions/{sessionId}/device/uninstallApp:
     post:
-      summary: Launch an app on device
+      summary: Uninstall an app currently installed on the device
       tags:
         - "Device Interactions"
       parameters:
@@ -279,18 +759,10 @@ paths:
               required:
                 - id
               properties:
-                bundleId:
+                id:
                   type: string
-                  description: Bundle identifier (iOS)
-                  example: "com.apple.XXX"
-                packageName:
-                  type: string
-                  description: Package Name of app to launch (Android)
-                  example: "com.android.XXX"
-                activityName:
-                  type: string
-                  description: Main Activity Name of app to launch (Android)
-                  example: "com.android.XXX.Activity"
+                  description: Bundle id (iOS) or Package Name (Android) of the app to be uninstalled
+                  example: "com.saucelabs.demoapp"
       responses:
         "200":
           description: Command executed successfully
@@ -302,6 +774,246 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/listFiles:
+      post:
+        summary: List files on device's external storage (Android) or within the app's sandbox (iOS)
+        tags:
+          - "Device Interactions"
+        parameters:
+          - name: sessionId
+            in: path
+            required: true
+            description: The id of the device session
+            schema:
+              type: string
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - path
+                properties:
+                  path:
+                    type: string
+                    example: "/sdcard/Robotium-Screenshots/"
+                  id:
+                    type: string
+                    description: Bundle id (iOS) or Package Name (Android) of the app to push files to (required on iOS).
+                    example: "com.saucelabs.demoapp"
+                  limit:
+                    type: number
+                    format: int32
+                    default: 10
+                    maximum: 100
+                    description: Max number of files to list
+        responses:
+          "200":
+            description: Command executed successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+          "400":
+            $ref: "#/components/responses/BadRequest"
+          "404":
+            $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/pullFile:
+    post:
+      summary: Push a file onto external storage (Android-only) or app's sandbox (iOS)
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  example: "mydb.sqlite"
+                id:
+                  type: string
+                  description: Bundle id (iOS) or Package Name (Android) of the app to pull files from (required on iOS).
+                  example: "com.saucelabs.demoapp"
+      responses:
+        "200":
+          description: File pulled successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: Contents of the file pulled from the device
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/pushFile:
+    post:
+      summary: Store a file on device's external storage (Android) or within the app's sandbox (iOS)
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - path
+                - payload
+              properties:
+                path:
+                  type: string
+                  example: "mydb.sqlite"
+                id:
+                  type: string
+                  description: Bundle id (iOS) or Package Name (Android) of the app to push files to (required on iOS).
+                  example: "com.saucelabs.demoapp"
+                payload:
+                  type: string
+                  format: binary
+                  description: Contents of the file to be placed on device
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/copyToClipboard:
+    post:
+      summary: Copy text into clipboard on device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  example: "Hello World"
+                payload:
+                  type: string
+                  format: binary
+                  description: Contents of the file to be placed on device
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/dismissPopups:
+    post:
+      summary: Dismiss all popups currently on screen
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/startAppiumServer:
+    post:
+      summary: Starts an appium session attached to the device session
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - appiumVersion
+              properties:
+                appiumVersion:
+                  type: string
+                  description: The appium version to use. Please check https://docs.saucelabs.com/mobile-apps/automated-testing/appium/appium-versions/#real-devices
+                  example: "latest"
+        responses:
+          "200":
+            description: Command executed successfully
+            content:
+              application/json:
+                schema:
+                  type: object
+          "400":
+            $ref: "#/components/responses/BadRequest"
+          "404":
+            $ref: "#/components/responses/DeviceSessionNotFound"
 
   /sessions/{sessionId}/device/proxy/http/{targetHost}/{targetPort}/{targetPath}:
     get:
@@ -586,6 +1298,134 @@ paths:
           $ref: "#/components/responses/DeviceSessionNotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+
+  /sessions/{sessionId}/device/network/profile:
+    put:
+      summary: Change network profile of the device session.
+      tags:
+        - "Network Throttling"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                networkProfile:
+                  type: string
+                  description: Name of the network profile to apply
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/network/condition:
+    get:
+      summary: Get current network conditions of this device session.
+      tags:
+        - "Network Throttling"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            $ref: "#/components/schemas/SessionId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    networkConditions:
+                      $ref: "#/components/schemas/NetworkConditions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+    put:
+      summary: Change network conditions of this device session.
+      tags:
+        - "Network Throttling"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                networkConditions:
+                  $ref: "#/components/schemas/NetworkConditions"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/network/profiles:
+    get:
+      summary: Retrieve a list of network conditioning profiles
+      tags:
+        - "Network Throttling"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  networkProfiles:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: "gprs"
+                        networkConditions:
+                          type: object
+                          properties:
+                            networkConditions:
+                              $ref: "#/components/schemas/NetworkConditions"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
 components:
   securitySchemes:
     basicAuth:
@@ -595,8 +1435,13 @@ components:
         HTTP Basic Authentication using your Sauce Labs credentials.
         - **Username**: Your Sauce Labs username.
         - **Password**: Your Sauce Labs access key.
-        
+
         You can find both your username and access key on the **Account > User Settings** page in the Sauce Labs UI.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
+      description: Cookie-based authentication with JWT
   responses:
     BadRequest:
       description: Bad Request
@@ -604,20 +1449,21 @@ components:
         application/problem+json:
           schema:
             type: object
+            description: "Error detailing a bad request, like a validation failure."
             properties:
               type:
                 type: string
-                example: about:blank
+                example: "about:blank"
               title:
                 type: string
-                example: Device does not exist.
+                example: "Device does not exist."
               detail:
                 type: string
                 example: 'The deviceId "Samsung XR" does not exist. Please ensure you provide an existing device Id.'
     NotAuthorized:
       description: Not Authorized
       content:
-        application/problem+json:
+        application/json:
           schema:
             type: object
             properties:
@@ -627,7 +1473,7 @@ components:
     DeviceSessionNotFound:
       description: Not Found
       content:
-        application/json:
+        application/problem+json:
           schema:
             type: object
             properties:
@@ -668,13 +1514,14 @@ components:
         application/problem+json:
           schema:
             type: object
+            description: "Error for when an action is attempted on a session that is not yet active."
             properties:
               type:
                 type: string
-                example: about:blank
+                example: "about:blank"
               title:
                 type: string
-                example: Device not ready.
+                example: "Device not ready."
               detail:
                 type: string
                 example: "You tried to interact with the device, but the state of you session is 'PENDING'. The state needs to be 'ACTIVE', if you want to interact with the device."
@@ -689,7 +1536,6 @@ components:
         - "MAINTENANCE"
         - "OFFLINE"
       example: "IN_USE"
-      description: the current state of the device. For private devices you will se a more specific state. For public devices we present an aggregated state. If one device that shares a descriptorId is available, then the entire descriptor will be marked as available.
     Device:
       type: object
       properties:
@@ -735,6 +1581,14 @@ components:
             deviceName:
               type: string
               example: "iPhone 13 real private"
+            ramSize:
+              type: number
+              format: int32
+              example: 4096
+            internalStorageSize:
+              type: number
+              format: int32
+              example: 128000
             os:
               type: string
               example: "ANDROID"
@@ -759,20 +1613,27 @@ components:
         links:
           type: object
           properties:
+            appiumWdHub:
+              type: string
+              example: "https://api.saucelabs.com/rdc/v1/sessions/123e4567-e89b-12d3-a456-426614174000/wd/hub"
             ioWebsocketUrl:
               type: string
-              example: "wss://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/io"
+              example: "wss://api.saucelabs.com/rdc/v1/sessions/123e4567-e89b-12d3-a456-426614174000/wss/io"
             eventsWebsocketUrl:
               type: string
-              example: "wss://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/events"
+              example: "wss://api.saucelabs.com/rdc/v1/sessions/123e4567-e89b-12d3-a456-426614174000/wss/events"
               description: Websocket for retrieving realtime logs, device events, and some statistics
             liveViewUrl:
               type: string
               example: "https://app.staging.saucelabs.net/live/mobile/dataCenters/US/devices/Samsung_Galaxy_S8_real2/shared/123e4567-e89b-12d3-a456-426614174000"
               description: Live test view for the openapi session
+            appiumUrl:
+              type: string
+              example: "https://api.staging.saucelabs.net/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/appium/wd/hub"
+              description: Appium endpoint for this session
             self:
               type: string
-              example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
+              example: "https://api.saucelabs.com/rdc/v1/sessions/123e4567-e89b-12d3-a456-426614174000"
     SessionCreation:
       type: object
       properties:
@@ -783,6 +1644,7 @@ components:
     SessionState:
       type: string
       enum:
+# PENDING is set when waiting for device to be AVAILABLE, or when limited by CCY
         - "PENDING"
         - "CREATING"
         - "ACTIVE"
@@ -790,9 +1652,36 @@ components:
         - "CLOSED"
         - "ERRORED"
       example: "CREATING"
-    RebootDevice:
-      type: boolean
-      default: false
+    Process:
+      type: object
+      properties:
+        pid:
+          type: number
+          format: int32
+          example: 36001
+        processName:
+          type: string
+          example: com.example.app
+    NetworkConditions:
+      type: object
+      description: Network conditions properties
+      properties:
+        downloadSpeed:
+          type: number
+          description: The maximum download speed in Kbps
+          example: 300
+        uploadSpeed:
+          type: number
+          description: The maximum upload speed in Kbps
+          example: 10
+        latency:
+          type: integer
+          description: Network latency in milliseconds
+          example: 1
+        loss:
+          type: integer
+          description: Packet loss in percent (0-100)
+          example: 1
     AppInstallationStatus:
       type: object
       description: Status of an ongoing or completed app installation process
@@ -802,7 +1691,7 @@ components:
           description: "Identifier of this app installation process"
         app:
           type: string
-          description: "This should be the location of your app in Sauce Labs App Storage Service (e.g., storage:filename=myapp.apk or storage:uuid)"
+          description: "This should be the location of your app in Sauce Labs App Storage Service or Ephemeral app (e.g., storage:filename=myapp.apk, storage:uuid, https://www.myserver.com/files/myapp.apk)"
           example: "storage:c78ec45e-ea3e-ac6a-b094-00364171addb"
         status:
           type: string
@@ -824,15 +1713,15 @@ components:
           description: |
             Controls Sauce Labs' app instrumentation (which includes **app re-signing for iOS**) for Real Device testing.
             For iOS, this process is **vital for app installation as it ensures the app is correctly signed and provisioned to run on Sauce Labs' diverse real devices.** This step is necessary to meet Apple's security requirements on these cloud devices. Enabling this also unlocks advanced features on both platforms.
-
+        
             **Automatic Behavior**: This setting is automatically forced to `true` if:
             - The iOS app is signed with an ad-hoc certificate.
             - Any instrumentation-dependent advanced features are enabled (for iOS or Android).
-
+        
             **Impact of `false`**:
             - iOS: App installation will likely fail, as the app may not meet the code signing and provisioning requirements for cloud devices.
             - Android: Advanced features will be disabled (though the app may still install).
-
+        
             For best results and compatibility, it's recommended to allow this to be `true`
           example: true
         launchAfterInstall:
@@ -873,3 +1762,65 @@ components:
               example: false
       required:
         - app
+    OtherAppInstallation:
+      type: object
+      description: Settings when installing auxiliary app on a device
+      properties:
+        appStorageId:
+          type: string
+          description: App Storage ID of app to be installed
+        resignApp:
+          type: boolean
+          default: false
+          description: "Resign app before installation. Automatically set to true for iOS apps signed with ad-hoc certificate."
+    TunnelConfiguration:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Name of Sauce Connect tunnel to be used in this session"
+        owner:
+          type: string
+          description: "Owner of Sauce Connect tunnel, if not current user"
+      required:
+        - name
+    VideoConfiguration:
+      type: object
+      properties:
+        streaming:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              default: true
+        recordVideo:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+              default: true
+    ProxySettings:
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: number
+      required:
+        - host
+        - port
+    Location:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+      required:
+        - latitude
+        - longitude
+    RebootDevice:
+      type: boolean
+      default: false
