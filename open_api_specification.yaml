@@ -303,6 +303,43 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/startAppiumServer:
+    post:
+      summary: Starts an appium server attached to the device session.
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - appiumVersion
+              properties:
+                appiumVersion:
+                  type: string
+                  description: The appium version to use. Please check https://docs.saucelabs.com/mobile-apps/automated-testing/appium/appium-versions/#real-devices
+                  example: "latest"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
   /sessions/{sessionId}/device/proxy/http/{targetHost}/{targetPort}/{targetPath}:
     get:
       summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided GET request and proxies the response from the server as the proxy in the device receives it
@@ -770,6 +807,10 @@ components:
               type: string
               example: "https://app.staging.saucelabs.net/live/mobile/dataCenters/US/devices/Samsung_Galaxy_S8_real2/shared/123e4567-e89b-12d3-a456-426614174000"
               description: Live test view for the openapi session
+            appiumUrl:
+              type: string
+              example: "https://api.staging.saucelabs.net/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/appium/wd/hub"
+              description: Endpoint to reach the appium-server for your session. Please note that you should start the server via /sessions/{sessionId}/device/startAppiumServer
             self:
               type: string
               example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
@@ -802,7 +843,7 @@ components:
           description: "Identifier of this app installation process"
         app:
           type: string
-          description: "This should be the location of your app in Sauce Labs App Storage Service (e.g., storage:filename=myapp.apk or storage:uuid)"
+          description: "This should be the location of your app in Sauce Labs App Storage Service or Ephemeral app (e.g., storage:filename=myapp.apk, storage:uuid, https://www.myserver.com/files/myapp.apk)"
           example: "storage:c78ec45e-ea3e-ac6a-b094-00364171addb"
         status:
           type: string
