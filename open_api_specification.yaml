@@ -164,6 +164,80 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/executeShellCommand:
+    post:
+      summary: Execute an adb shell command on an Android device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - adbShellCommand
+              properties:
+                adbShellCommand:
+                  type: string
+                  description: "The shell command to execute on the device. Note: you do not need to prefix your command with 'adb shell' to run."
+                  example: "ls /"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stdout:
+                    type: string
+                    description: the stdout of your shell command.
+                    example: "acct                debug_ramdisk      keyrefuge       sdcard\napex                default.prop       linkerconfig    sepolicy_version\naudit_filter_table  dev                lost+found      spu\nbin                 dpolicy            mnt             storage\n"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "502":
+          description: Temporary network error while proxying adb shell command to device.
+          content: 
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: about:blank
+                  title:
+                    type: string
+                    example: ADB command error
+                  detail:
+                    type: string
+                    example: Temporary network error occurred while sending adb command to device. Please try again or pick another device. If this issue persists please get in contact with your Sauce Labs representative.
+        "504":
+          description: Timeout occured while proxying adb shell command to device.
+          content: 
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: about:blank
+                  title:
+                    type: string
+                    example: ADB command error
+                  detail:
+                    type: string
+                    example: Timed out while waiting for adb command to complete. Please do not execute long running adb commands. If this issue persists please get in contact with your Sauce Labs representative.
+
   /sessions/{sessionId}/device/openUrl:
     post:
       summary: Open a url (through browser) or a deeplink to an app
