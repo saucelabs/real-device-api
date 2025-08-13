@@ -77,6 +77,12 @@ paths:
                       type: string
                       enum: [android, ios]
                       example: ios
+                configuration:
+                  type: object
+                  properties:
+                    tunnel:
+                      type: object
+                      $ref: "#/components/schemas/TunnelConfiguration"
       responses:
         "200":
           description: Ok
@@ -834,6 +840,19 @@ components:
     RebootDevice:
       type: boolean
       default: false
+    TunnelConfiguration:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Name of Sauce Connect tunnel to be used in this session"
+          example: us_west_sauce_connect_tunnel
+        owner:
+          type: string
+          description: "Owner of Sauce Connect tunnel, if not current user"
+          example: some_user_name
+      required:
+        - name
     AppInstallationStatus:
       type: object
       description: Status of an ongoing or completed app installation process
