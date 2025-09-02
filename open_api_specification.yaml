@@ -415,6 +415,7 @@ paths:
             application/json:
               schema:
                 type: object
+                $ref: "#/components/schemas/AppiumSession"
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
@@ -439,6 +440,7 @@ paths:
             application/json:
               schema:
                 type: object
+                $ref: "#/components/schemas/AppiumSession"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
@@ -912,6 +914,17 @@ components:
               type: number
               format: int32
               example: 6
+        appium:
+          type: object
+          properties:
+            url:
+              type: string
+              example: "https://api.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
+              description: The hosted appium server endpoint associated to this session
+            version:
+              type: object
+              example: "stable"
+              description: The hosted appium server version
         links:
           type: object
           properties:
@@ -933,6 +946,19 @@ components:
             self:
               type: string
               example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
+
+    AppiumSession:
+      type: object
+      properties:
+        url:
+          type: string
+          example: "https://api.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
+          description: The hosted appium server endpoint associated to this session
+        version:
+          type: object
+          example: "stable"
+          description: The hosted appium server version
+
     SessionCreation:
       type: object
       properties:
