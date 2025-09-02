@@ -383,11 +383,11 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
-  /sessions/{sessionId}/device/startAppiumServer:
+  /sessions/{sessionId}/appiumServer:
     post:
-      summary: Starts an appium server attached to the device session.
+      summary: Starts an appium session attached to the device session
       tags:
-        - "Device Interactions"
+        - "Appium Server"
       parameters:
         - name: sessionId
           in: path
@@ -417,6 +417,28 @@ paths:
                 type: object
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+    get:
+      summary: Returns details of the status of the hosted appium server
+      tags:
+        - "Appium Server"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
@@ -731,6 +753,23 @@ components:
               detail:
                 type: string
                 example: 'The deviceId "Samsung XR" does not exist. Please ensure you provide an existing device Id.'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            description: "Error detailing a forbidden operation was attempted."
+            properties:
+              type:
+                type: string
+                example: "about:blank"
+              title:
+                type: string
+                example: "Appium already started."
+              detail:
+                type: string
+                example: "Appium server already started with version '2025-06-06'"
     NotAuthorized:
       description: Not Authorized
       content:
