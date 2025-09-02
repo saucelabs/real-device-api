@@ -383,7 +383,7 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
-  /sessions/{sessionId}/appiumServer:
+  /sessions/{sessionId}/appiumserver:
     post:
       summary: Starts an appium session attached to the device session
       tags:
@@ -929,7 +929,7 @@ components:
             appiumUrl:
               type: string
               example: "https://api.staging.saucelabs.net/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/appium/wd/hub"
-              description: Endpoint to reach the appium-server for your session. Please note that you should start the server via /sessions/{sessionId}/device/startAppiumServer
+              description: Endpoint to reach the appium-server for your session. Please note that you should start the server via /sessions/{sessionId}/appiumserver
             self:
               type: string
               example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
