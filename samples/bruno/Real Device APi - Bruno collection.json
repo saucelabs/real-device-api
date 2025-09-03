@@ -1,0 +1,749 @@
+{
+  "name": "Real Device APi - Bruno collection",
+  "version": "1",
+  "items": [
+    {
+      "type": "http",
+      "name": "Access WDA - through HTTP proxy- iOS only",
+      "filename": "Access WDA - through HTTP proxy- iOS only.bru",
+      "seq": 10,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/device/proxy/http/localhost/8100/status",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "Close Device session",
+      "filename": "Close Device session.bru",
+      "seq": 4,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}",
+        "method": "DELETE",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "Device Catalog - Device Status",
+      "filename": "Device Catalog - Device Status.bru",
+      "seq": 1,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/rdc/v2/devices/status?privateOnly=true",
+        "method": "GET",
+        "headers": [],
+        "params": [
+          {
+            "name": "privateOnly",
+            "value": "true",
+            "type": "query",
+            "enabled": true
+          }
+        ],
+        "body": {
+          "mode": "none",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "inherit"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "Get all device sessions",
+      "filename": "Get all device sessions.bru",
+      "seq": 5,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"deviceId\" : \"Google_Pixel_7_Pro_staging_sjc1_6\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "Get device session",
+      "filename": "Get device session.bru",
+      "seq": 3,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "bru.setEnvVar(\"device_session\", res.body.deviceSessionId)\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "Start device session",
+      "filename": "Start device session.bru",
+      "seq": 2,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"device\" : {\n    \"os\" : \"android\",\n    \"deviceName\" : \"Google Pixel.*\"\n  }\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "bru.setEnvVar(\"api_session\", res.body.id)\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "StartAppiumSession",
+      "filename": "StartAppiumSession.bru",
+      "seq": 15,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{appium_sever_url}}/session/",
+        "method": "POST",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"capabilities\": {\n    \"alwaysMatch\": {\n      \"appium:platformName\" : \"Android\"\n     \n    },\n    \"firstMatch\": [\n      {}\n    ]\n  }\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "bru.setEnvVar(\"appium_session\", res.body.value.sessionId)\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "executeShellCommand",
+      "filename": "executeShellCommand.bru",
+      "seq": 12,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/device/executeShellCommand",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"adbShellCommand\" : \"adb shell uiautomator dump\"\n  //\"adbShellCommand\" : \"adb shell cat /sdcard/window_dump.xml\"\n\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "get appium server",
+      "filename": "get appium server.bru",
+      "seq": 14,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/appiumserver",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"appiumVersion\": \"latest\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "bru.setEnvVar(\"appium_sever_url\", res.body.url)\n\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "getappiumsession",
+      "filename": "getappiumsession.bru",
+      "seq": 16,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{appium_sever_url}}/session/{{appium_session}}",
+        "method": "GET",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"capabilities\": {\n    \"alwaysMatch\": {\n      \"appium:platformName\" : \"Android\"\n     // \"appium:app\": \"/path/to/your/app.apk\",\n     // \"appium:automationName\": \"UIAutomator2\"\n    },\n    \"firstMatch\": [\n      {}\n    ]\n  }\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "none"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "installApp",
+      "filename": "installApp.bru",
+      "seq": 7,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/device/installApp",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"app\" : \"storage:filename=mda-2.2.0-25.apk\",\n  \"enableInstrumentation\" : true,\n  \"launchAfterInstall\" : true,\n  \"features\" : {\n    \"networkCapture\": true,\n    \"deviceVitals\": true,\n    \"imageInjection\": true,\n    \"biometricsInterception\": true,\n    \"bypassScreenshotRestriction\": true,\n    \"errorReporting\": true\n}\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "launchApp",
+      "filename": "launchApp.bru",
+      "seq": 9,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/device/launchApp",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"packageName\" : \"com.google.android.calculator\",\n  \"activityName\" : \"com.android.calculator2.Calculator\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "listApps",
+      "filename": "listApps.bru",
+      "seq": 8,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/device/listAppInstallations",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "openUrl",
+      "filename": "openUrl.bru",
+      "seq": 6,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/device/openUrl",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"url\" : \"https://saucelabs.com\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "proxyHttpToGoogle.com",
+      "filename": "proxyHttpToGoogle.com.bru",
+      "seq": 11,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/device/proxy/http/www.google.com/80/",
+        "method": "GET",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "startAppiumServer",
+      "filename": "startAppiumServer.bru",
+      "seq": 13,
+      "settings": {},
+      "tags": [],
+      "request": {
+        "url": "{{api_url}}/{{api_sessions_endpoint}}/{{api_session}}/appiumserver",
+        "method": "POST",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "params": [],
+        "body": {
+          "mode": "json",
+          "json": "{\n  \"appiumVersion\": \"latest\"\n}",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {
+          "res": "bru.setEnvVar(\"appium_sever_url\", res.body.url)\n"
+        },
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "basic",
+          "basic": {
+            "username": "{{username}}",
+            "password": "{{access_key}}"
+          }
+        }
+      }
+    }
+  ],
+  "activeEnvironmentUid": "xPh349kFQz5BvjQnJtCjJ",
+  "environments": [
+    {
+      "variables": [
+        {
+          "name": "api_url",
+          "value": "https://api.eu-central-1.saucelabs.com",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "device_catalog_endpoint",
+          "value": "/v1/rdc/devices",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "api_sessions_endpoint",
+          "value": "rdc/v2/sessions",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "api_session",
+          "value": "",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "username",
+          "value": "",
+          "enabled": true,
+          "secret": true,
+          "type": "text"
+        },
+        {
+          "name": "access_key",
+          "value": "",
+          "enabled": true,
+          "secret": true,
+          "type": "text"
+        }
+      ],
+      "name": "Sauce - eu"
+    },
+    {
+      "variables": [
+        {
+          "name": "api_url",
+          "value": "https://api.us-west-1.saucelabs.com",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "device_catalog_endpoint",
+          "value": "/v1/rdc/devices",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "api_sessions_endpoint",
+          "value": "rdc/v2/sessions",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "api_session",
+          "value": "",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "username",
+          "value": "",
+          "enabled": true,
+          "secret": true,
+          "type": "text"
+        },
+        {
+          "name": "access_key",
+          "value": "",
+          "enabled": true,
+          "secret": true,
+          "type": "text"
+        }
+      ],
+      "name": "Sauce - us-west"
+    }
+  ],
+  "root": {
+    "request": {
+      "auth": {
+        "mode": "basic",
+        "basic": {
+          "username": "{{username}}",
+          "password": "{{access_key}}"
+        }
+      }
+    }
+  },
+  "brunoConfig": {
+    "version": "1",
+    "name": "Real Device APi - Bruno collection",
+    "type": "collection",
+    "ignore": [
+      "node_modules",
+      ".git"
+    ],
+    "size": 0.010702133178710938,
+    "filesCount": 23
+  }
+}
