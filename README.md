@@ -44,3 +44,9 @@ please see our [Integration Guide](INTEGRATION_GUIDE.md).
 ## Local Appium
 
 For a quick start running Appium locally, please follow [our guide](./LOCAL_APPIUM.md) on the topic.
+
+## Sauce Lab's Hosted Appium Server
+
+Run your tests faster and more efficiently by controlling the device session yourself. 
+Our OpenAPI-driven approach allows you to reserve a device **once** and run your entire test suite against it.
+For a quick start, please follow **[our guide on using Sauce Lab's Hosted Appium Server](./SAUCE_LABS_HOSTED_APPIUM.md)**.
