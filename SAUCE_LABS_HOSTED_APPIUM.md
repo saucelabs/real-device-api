@@ -1,28 +1,33 @@
-# Test Smarter, Not Harder with the Sauce Labs OpenAPI
+# Faster, Smarter Appium Testing with OpenAPI Sessions
 
-For testers, the most valuable resource is time. This guide demonstrates how to use the Sauce Labs OpenAPI to reclaim that time, 
-enabling you to run more tests, get faster feedback, and gain unprecedented control over your mobile testing workflow.
+For testers, the most valuable resource is time. This guide demonstrates how to use the Sauce Labs OpenAPI —a core part of our Real Device 
+API v2— to reclaim that time, enabling you to run more tests, get faster feedback, and gain unprecedented control over 
+your mobile testing workflow.
 
-## The Old Way vs. The Smart Way
+## The Test-per-Session Model vs. The Suite-per-Session Model
 
 Think about a traditional Appium test run. For every single test, you typically have to:
-1. Wait for a device to become available. 
+
+**Traditional Model (Test-per-Session):**
+1. Wait for a device to become available.
 2. Wait for the device to be prepared.
-3. Wait for the Appium session to start. 
-4. Run your test. 
+3. Wait for the Appium session to start.
+4. Run your test.
 5. Tear down the session and release the device.
+6. Repeat for every test in your suite.
 
-This cycle repeats for every test, meaning most of your CI/CD pipeline's time is spent waiting, not testing.
+This cycle means most of your pipeline's time is spent on repetitive setup and teardown, not on executing tests.
 
-***The OpenAPI session model flips this on its head.*** Instead of treating each test as an isolated event, you treat the 
+**The OpenAPI Session Model (Suite-per-Session):**
+
+***The OpenAPI session model transforms this workflow.*** Instead of treating each test as an isolated event, you treat the
 entire test suite as a single session with a reserved device.
 
-**The Smart Way:**
-1. Start a device session 
+1. Start a device session
 2. Start Appium server once.
-3. Run Test 1. 
-4. Run Test 2. 
-5. Run Test N... 
+3. Run Test 1.
+4. Run Test 2.
+5. ...Run Test N
 6. Tear down the session once.
 
 This fundamental shift is the key to unlocking massive efficiency gains.
@@ -33,38 +38,38 @@ Using an OpenAPI session isn't just a different technique; it's a better testing
 ### Blazing Speed: Go from Minutes to Seconds
 By paying the "startup cost" of getting a device and launching Appium only once, your subsequent tests become incredibly fast.
 
-* ***Eliminate Redundant Waits:*** No more waiting for a new device for each test. The device is yours for the duration of 
-the test suite.
+* ***Eliminate Redundant Waits:*** No more waiting for a new device for each test. The device is yours for the duration of
+  the test suite.
 
-* ***Instant Test Execution:*** Your second, third, and fourth tests can start immediately after the previous one finishes. 
-This drastically shortens the feedback loop, allowing you to find—and verify fixes for—bugs faster than ever before.
+* ***Instant Test Execution:*** Your second, third, and fourth tests can start immediately after the previous one finishes.
+  This drastically shortens the feedback loop, allowing you to find—and verify fixes for—bugs faster than ever before.
 
 ### Unprecedented Control: Become a Device Orchestrator
-An open session transforms the remote device into your personal workbench. You are no longer just running a test; 
+An open session transforms the remote device into your personal workbench. You are no longer just running a test;
 you are orchestrating the device's state to create more powerful and realistic test scenarios.
 
-* ***Run Dependent Tests:*** Easily test workflows that span multiple steps, like adding an item to a cart in one test and 
-checking out in another, all without restarting the app.
+* ***Run Dependent Tests:*** Easily test workflows that span multiple steps, like adding an item to a cart in one test and
+  checking out in another, all without restarting the app.
 
 * ***Manipulate Device State:*** Between tests, you have full control. You can programmatically:
-  * Push test data, files, or pre-configured settings. 
-  * Clear app cache or user data to start the next test from a clean slate. 
+  * Push test data, files, or pre-configured settings.
+  * Clear app cache or user data to start the next test from a clean slate.
   * Run diagnostic scripts.
 
-* ***Debug with Precision:*** If a test fails, the device and app remain in their failed state. You can keep the session 
-open, get the Live View URL, and manually inspect the device to understand exactly what went wrong.
+* ***Debug with Precision:*** If a test fails, the device and app remain in their failed state. You can keep the session
+  open, get the Live View URL, and manually inspect the device to understand exactly what went wrong.
 
 ### Ultimate Efficiency: Maximize Your Testing Time
 Efficiency is the natural result of speed and control.
 
-* ***Run More Scenarios:*** Because each test is so much faster, you can afford to run a much larger and more comprehensive 
-set of tests in the same CI/CD time window.
+* ***Run More Scenarios:*** Because each test is so much faster, you can afford to run a much larger and more comprehensive
+  set of tests in the same CI/CD time window.
 
-* ***Lower Costs:*** Less time spent waiting for sessions to start means less cloud time consumed, directly translating 
-to lower testing costs.
+* ***Lower Costs:*** Less time spent waiting for sessions to start means less cloud time consumed, directly translating
+  to lower testing costs.
 
-* ***Simplified Code:*** As the example below shows, your test code becomes cleaner. The complex setup logic is isolated, 
-leaving your `@Test` methods focused purely on the test actions and assertions.
+* ***Simplified Code:*** As the example below shows, your test code becomes cleaner. The complex setup logic is isolated,
+  leaving your `@Test` methods focused purely on the test actions and assertions.
 
 ## How It Looks in Practice
 This modern Java and JUnit 5 example shows how elegantly this concept translates to code.
@@ -83,8 +88,9 @@ public class OpenApiAppiumTest {
     private static URL appiumUrl;     // The Appium URL, reused for all tests
 
     /**
-     * The ONE-TIME investment. This grabs a device and starts Appium
-     * before any tests begin.
+     * Runs once before any @Test methods. This method reserves a device via the
+     * Sauce Labs OpenAPI and starts a persistent Appium server for that device.
+     * The resulting session ID and Appium URL are stored for all subsequent tests.
      */
     @BeforeAll
     public static void setupSuite() throws MalformedURLException {
@@ -120,7 +126,9 @@ public class OpenApiAppiumTest {
             // ... test logic for logging in ...
             assertTrue(driver.findElement(By.id("user_avatar")).isDisplayed());
         } finally {
-            driver.quit(); // Quits the Appium driver, NOT the device session
+            // This quits the Appium client connection for this specific test.
+            // The underlying device session remains active for the next test.
+            driver.quit();
         }
     }
 
@@ -133,6 +141,8 @@ public class OpenApiAppiumTest {
             // ... test logic for adding an item to the cart ...
             assertEquals("1", driver.findElement(By.id("cart_badge")).getText());
         } finally {
+            // This quits the Appium client connection for this specific test.
+            // The underlying device session remains active for the next test.
             driver.quit();
         }
     }
@@ -141,5 +151,5 @@ public class OpenApiAppiumTest {
 }
 ```
 
-By adopting this OpenAPI session-based approach, you fundamentally change your relationship with the test grid—from 
+By adopting this OpenAPI session-based approach, you fundamentally change your relationship with the test grid—from
 a passive user to an active orchestrator, leading to faster, more powerful, and more efficient testing.
