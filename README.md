@@ -47,6 +47,7 @@ For a quick start running Appium locally, please follow [our guide](./LOCAL_APPI
 
 ## Sauce Lab's Hosted Appium Server
 
-Run your tests faster and more efficiently by controlling the device session yourself. 
-Our OpenAPI-driven approach allows you to reserve a device **once** and run your entire test suite against it.
-For a quick start, please follow **[our guide on using Sauce Lab's Hosted Appium Server](./SAUCE_LABS_HOSTED_APPIUM.md)**.
+Unlock massive **efficiency** gains by running your entire Appium test suite in a single, persistent session. Our OpenAPI-driven approach 
+lets you reserve a device **once** and run tests back-to-back, cutting out repetitive setup and wait times.
+
+For a quick start, please see **[Faster, Smarter Appium Testing with OpenAPI Sessions.](./SAUCE_LABS_HOSTED_APPIUM.md)**.
