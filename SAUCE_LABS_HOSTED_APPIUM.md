@@ -16,7 +16,7 @@ Think about a traditional Appium test run. For every single test, you typically 
 5. Tear down the session and release the device.
 6. Repeat for every test in your suite.
 
-This cycle means most of your pipeline's time is spent on repetitive setup and teardown, not on executing tests.
+This cycle means a lot of your pipeline's time is spent on repetitive setup and teardown, not on executing tests.
 
 **The OpenAPI Session Model (Suite-per-Session):**
 
