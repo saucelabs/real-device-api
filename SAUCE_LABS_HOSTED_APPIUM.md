@@ -1,8 +1,8 @@
 # Faster, Smarter Appium Testing with OpenAPI Sessions
 
-For testers, time is a critical resource. This guide demonstrates how to use the Sauce Labs OpenAPI—a core part of our Real Device Access 
-API v2—to use your devices more efficiently and decrease the runtime of your Appium test suite. This approach enables you to run more tests,
-get faster feedback, and gain greater control over your mobile testing workflow.
+For testers, time is a critical resource. This guide demonstrates how to use the Sauce Labs Access API to use your devices more efficiently 
+and decrease the runtime of your Appium test suite. This approach enables you to run more tests, get faster feedback, and gain greater 
+control over your mobile testing workflow.
 
 ## The Test-per-Session Model vs. The Suite-per-Session Model
 
@@ -33,7 +33,7 @@ device once for the entire suite. You can then run any number of tests on that s
 
 ## Core Value for Testers: Speed, Control, and Efficiency
 
-### Blazing Speed: Go from Minutes to Seconds
+### Accelerate Your Test Suite Execution
 By paying the "startup cost" of getting a device and launching Appium only once, your subsequent tests become faster.
 
 * ***Eliminate Redundant Waits:*** No more waiting for a new device for each test. The device is yours for the duration of
@@ -57,11 +57,14 @@ you are orchestrating the device's state to create more powerful and realistic t
 * ***Debug with Precision:*** If a test fails, the device and app remain in their failed state. You can keep the session
   open, get the Live View URL, and manually inspect the device to understand exactly what went wrong.
 
-### Improved Code Structure
+### Centralizing Session Management
 
-This approach promotes a cleaner separation of concerns. As the example below shows, the complex logic 
-for reserving a device and starting Appium is centralized into a one-time suite setup. This leaves your individual `@Test` methods leaner 
-and more focused on their specific actions and assertions, making them easier to read and maintain.
+Running an entire test suite on a single device session introduces a new lifecycle to manage. A recommended pattern, shown in the example 
+below, is to centralize the device and Appium setup logic using a suite-level setup method (like JUnit 5's `@BeforeAll`).
+
+This isolates the infrastructure management—reserving the device and starting Appium—from the test logic. As a result, 
+the individual `@Test` methods can be written to focus purely on application interactions, operating on the assumption 
+that an active session is already available.
 
 ## How It Looks in Practice
 This modern Java and JUnit 5 example shows how elegantly this concept translates to code.
