@@ -36,7 +36,7 @@ This fundamental shift is the key to unlocking massive efficiency gains.
 Using an OpenAPI session isn't just a different technique; it's a better testing paradigm.
 
 ### Blazing Speed: Go from Minutes to Seconds
-By paying the "startup cost" of getting a device and launching Appium only once, your subsequent tests become incredibly fast.
+By paying the "startup cost" of getting a device and launching Appium only once, your subsequent tests become faster.
 
 * ***Eliminate Redundant Waits:*** No more waiting for a new device for each test. The device is yours for the duration of
   the test suite.
