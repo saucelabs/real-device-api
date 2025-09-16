@@ -47,7 +47,7 @@ For a quick start running Appium locally, please follow [our guide](./LOCAL_APPI
 
 ## Sauce Lab's Hosted Appium Server
 
-Unlock massive **efficiency** gains by running your entire Appium test suite in a single, persistent session. Our RDC Access API-driven approach 
-lets you reserve a device **once** and run tests back-to-back, cutting out repetitive setup and wait times.
+Use your devices more efficiently and decrease the runtime of your Appium test suite. Our RDC Access API lets you reserve a device
+**once** and run tests back-to-back, cutting out repetitive setup and wait times.
 
 For a quick start, please see **[Faster, Smarter Appium Testing with RDC Access API Sessions.](./SAUCE_LABS_HOSTED_APPIUM.md)**.
