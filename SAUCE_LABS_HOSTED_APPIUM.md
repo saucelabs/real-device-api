@@ -1,4 +1,4 @@
-# Faster, Smarter Appium Testing with OpenAPI Sessions
+# Faster, Smarter Appium Testing with RDC Access API Sessions
 
 For testers, time is a critical resource. This guide demonstrates how to use the Sauce Labs Access API to use your devices more efficiently 
 and decrease the runtime of your Appium test suite. This approach enables you to run more tests, get faster feedback, and gain greater 
