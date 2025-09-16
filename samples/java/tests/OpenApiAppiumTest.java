@@ -1,215 +1,209 @@
-package com.saucelabs.rdc.openapi.tests;
-
-import static com.saucelabs.rdc.openapi.helpers.Env.getAccessKey;
-import static com.saucelabs.rdc.openapi.helpers.Env.getBaseURL;
-import static com.saucelabs.rdc.openapi.helpers.Env.getSauceUsername;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static io.restassured.RestAssured.given;
-
-import com.saucelabs.rdc.openapi.model.ApiSessionState;
-
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.openqa.selenium.MutableCapabilities;
-import org.openqa.selenium.OutputType;
-
-import java.net.MalformedURLException;
+import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-import io.appium.java_client.android.AndroidDriver;
-import io.restassured.RestAssured;
-import io.restassured.path.json.JsonPath;
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class OpenApiAppiumTest {
+	// Fetches credentials from environment variables
+	private static final String SAUCE_USERNAME = System.getenv("SAUCE_USERNAME");
+	private static final String SAUCE_API_KEY = System.getenv("SAUCE_API_KEY");
 
-	// A default timeout for state transitions can be defined here
-	private static final long DEFAULT_TIMEOUT_MINUTES = 3;
+	// Base URL for the Sauce Labs RDC API - Using US-WEST
+	private static final String BASE_URL = "https://api.us-west-1.saucelabs.com/rdc/v2/";
 
-	@BeforeAll
-	public static void setup() {
-		// Get test config from environment variables
-		String username = getSauceUsername();
-		String accessKey = getAccessKey();
-		RestAssured.baseURI = getBaseURL();
+	private static final HttpClient client = HttpClient.newBuilder()
+			.version(HttpClient.Version.HTTP_2)
+			.connectTimeout(Duration.ofSeconds(20))
+			.build();
 
-		if (username == null || accessKey == null) {
-			throw new IllegalArgumentException("Username and Access Key must be provided.");
+	public enum ApiSessionState { PENDING, CREATING, ACTIVE, CLOSING, CLOSED, ERRORED }
+
+	/**
+	 * Main entry point for the script.
+	 */
+	public static void main(String[] args) throws IOException, InterruptedException {
+		// Basic validation for credentials
+		if (SAUCE_USERNAME == null || SAUCE_API_KEY == null || SAUCE_USERNAME.isEmpty() || SAUCE_API_KEY.isEmpty()) {
+			System.err.println("Error: Please set SAUCE_USERNAME and SAUCE_API_KEY environment variables.");
+			return;
 		}
 
-		RestAssured.authentication = RestAssured.basic(username, accessKey);
-	}
-
-	@Test
-	public void test_android_simple_appium_test() throws MalformedURLException, InterruptedException {
-		log.info("Starting Android session lifecycle test");
-		String sessionId = createApiSession("Android");
-
+		System.out.println("--- Starting API Session Demo ---");
+		String sessionId = null;
 		try {
-			log.info("Created new Android session with ID: {}", sessionId);
-			waitForApiSessionState(sessionId, ApiSessionState.ACTIVE, DEFAULT_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+			// 1. Create a session for an Android device
+			sessionId = createApiSession("Android");
+			System.out.println("Successfully created session. ID: " + sessionId);
 
-			log.info("Verifying session {} is ACTIVE", sessionId);
-			verifyApiSessionState(sessionId, ApiSessionState.ACTIVE);
+			// 2. Wait for the session to become active
+			waitForApiSessionState(sessionId, ApiSessionState.ACTIVE, 3);
+			System.out.println("Session is now ACTIVE.");
 
-			// Start the Appium server and get the URL
-			String appiumUrl = startAppiumServer(sessionId);
+			// 3. Start the Appium server for the active session
+			var appiumUrl = startAppiumServer(sessionId);
 
-			runSimpleAppiumAndroidTest(new URL(appiumUrl));
+			// 4. At this point, you would run your Appium tests
+			runSimpleAppiumTest(appiumUrl);
+
+		} catch (Exception e) {
+			System.err.println("An error occurred during the session lifecycle: " + e.getMessage());
+			e.printStackTrace();
 		} finally {
-			log.info("Closing session: {}", sessionId);
-			closeApiSession(sessionId);
-			waitForApiSessionState(sessionId, ApiSessionState.CLOSED, 1, TimeUnit.MINUTES);
+			// 5. Ensure the session is always closed
+			if (sessionId != null) {
+				System.out.println("--- Closing Session ---");
+				closeApiSession(sessionId);
+				System.out.println("Session marked for closing. Waiting for confirmation...");
+				waitForApiSessionState(sessionId, ApiSessionState.CLOSED, 1);
+				System.out.println("Session is confirmed CLOSED.");
+			}
 		}
 	}
 
-	private void runSimpleAppiumAndroidTest(URL appiumURL) throws InterruptedException {
-		var driver = createAppiumAndroidDriver(appiumURL);
+	/**
+	 * Creates a new API session.
+	 * POST /sessions
+	 */
+	private static String createApiSession(String os) throws IOException, InterruptedException {
+		String requestBody = String.format("""
+                {
+                  "device": {
+                     "os": "%s"
+                  }
+                }
+                """, os);
 
-		driver.get("https://www.google.com/");
-		driver.getScreenshotAs(OutputType.BASE64);
-	}
+		HttpRequest request = buildRequest("/sessions", "POST", requestBody);
+		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-	private static AndroidDriver createAppiumAndroidDriver(URL appiumURL) {
-		var givenCapabilities = new MutableCapabilities();
-		givenCapabilities.setCapability("automationName", "UiAutomator2");
-		givenCapabilities.setCapability("appium:newCommandTimeout", 120);
+		if (response.statusCode() != 200) {
+			System.out.println(response);
+			throw new RuntimeException("Failed to create session. Status: " + response.statusCode() + " Body: " + response.body());
+		}
 
-		var driver = new AndroidDriver(appiumURL, givenCapabilities);
-		return driver;
+		return parseJsonValue(response.body(), "id");
 	}
 
 	/**
 	 * Starts the Appium server for a given session.
-	 *
-	 * @param sessionId The ID of the active session.
-	 * @return The Appium server URL.
+	 * POST /sessions/{sessionId}/appiumserver
 	 */
-	private String startAppiumServer(String sessionId) {
-		log.info("Starting Appium server for session {}", sessionId);
-		JsonPath response = given()
-				.contentType("application/json")
-				.body("""
-                  { "appiumVersion": "latest" }
-                  """)
-				.when()
-				.post("/sessions/" + sessionId + "/appiumserver")
-				.then()
-				.statusCode(200)
-				.extract().jsonPath();
+	private static URL startAppiumServer(String sessionId) throws IOException, InterruptedException {
+		String requestBody = """
+                { "appiumVersion": "latest" }
+                """;
 
-		String appiumUrl = response.getString("url");
-		assertNotNull(appiumUrl, "Appium URL should not be null");
-		log.info("Appium server is ready at: {}", appiumUrl);
-		return appiumUrl;
-	}
+		HttpRequest request = buildRequest("/sessions/" + sessionId + "/appiumserver", "POST", requestBody);
+		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-	/**
-	 * Creates a new API session for the specified operating system.
-	 * Asserts that the initial state is PENDING.
-	 *
-	 * @param os The operating system ("Android" or "ios").
-	 * @return The ID of the created session.
-	 */
-	private String createApiSession(String os) {
-		log.info("Creating a new API session for OS: {}", os);
-		JsonPath sessionCreationResponse = given()
-				.contentType("application/json")
-				.body("""
-                  {
-                  	"device": {
-                  		"os": "%s"
-					}
-				  }
-                  """.formatted(os))
-				.when()
-				.post("/sessions")
-				.then()
-				.statusCode(200)
-				.body("state", equalTo(ApiSessionState.PENDING.name()))
-				.extract().jsonPath();
-		return sessionCreationResponse.getString("id");
-	}
-
-	/**
-	 * Waits for a session to transition to an expected state within a given timeout.
-	 * This is a generic and reusable method for polling session status.
-	 *
-	 * @param sessionId     The ID of the session to wait for.
-	 * @param expectedState The target ApiSessionState to wait for.
-	 * @param timeout       The maximum time to wait.
-	 * @param timeUnit      The unit of time for the timeout.
-	 */
-	private void waitForApiSessionState(String sessionId, ApiSessionState expectedState, long timeout, TimeUnit timeUnit) {
-		log.info("Waiting for session {} to become {} (timeout: {} {})", sessionId, expectedState, timeout, timeUnit);
-		try {
-			Awaitility.await()
-					.atMost(timeout, timeUnit)
-					.pollInterval(5, TimeUnit.SECONDS)
-					.until(() -> getApiSessionState(sessionId) == expectedState);
-			log.info("Session {} is now in state: {}", sessionId, expectedState);
-		} catch (Exception e) {
-			log.error("Session {} did not transition to {} within the specified time.", sessionId, expectedState, e);
-			throw e;
+		if (response.statusCode() != 200) {
+			throw new RuntimeException("Failed to start Appium server. Status: " + response.statusCode() + " Body: " + response.body());
 		}
-	}
 
-	/**
-	 * Verifies that the session is in the expected state.
-	 *
-	 * @param sessionId     The ID of the session to check.
-	 * @param expectedState The expected ApiSessionState.
-	 */
-	private void verifyApiSessionState(String sessionId, ApiSessionState expectedState) {
-		ApiSessionState currentState = getApiSessionState(sessionId);
-		assertEquals(expectedState, currentState, "Session state is not as expected.");
-		log.info("Successfully verified session {} state is {}", sessionId, currentState);
+		return new URL(parseJsonValue(response.body(), "url"));
 	}
 
 	/**
 	 * Closes an active API session.
-	 * Asserts that the final state is CLOSING.
-	 *
-	 * @param sessionId The ID of the session to close.
+	 * DELETE /sessions/{sessionId}
 	 */
-	private void closeApiSession(String sessionId) {
-		log.info("Sending DELETE request to close session {}", sessionId);
-		given()
-				.when()
-				.delete("/sessions/" + sessionId)
-				.then()
-				.statusCode(200)
-				.body("state", equalTo(ApiSessionState.CLOSING.name()));
-		log.info("Session {} successfully marked for closing.", sessionId);
+	private static void closeApiSession(String sessionId) throws IOException, InterruptedException {
+		HttpRequest request = buildRequest("/sessions/" + sessionId, "DELETE", null);
+		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+		if (response.statusCode() != 200) {
+			System.err.println("Warning: Failed to close session gracefully. Status: " + response.statusCode() + " Body: " + response.body());
+		}
 	}
 
 	/**
 	 * Retrieves the current state of a session.
-	 *
-	 * @param sessionId The ID of the session.
-	 * @return The current state as a ApiSessionState enum.
+	 * GET /sessions/{sessionId}
 	 */
-	private ApiSessionState getApiSessionState(String sessionId) {
-		String stateStr = given()
-				.when()
-				.get("/sessions/" + sessionId)
-				.then()
-				.statusCode(200)
-				.extract().jsonPath().getString("state");
-		log.debug("Session {} current state string: {}", sessionId, stateStr);
-		try {
-			return ApiSessionState.valueOf(stateStr);
-		} catch (IllegalArgumentException e) {
-			log.error("Unknown session state '{}' received for session {}", stateStr, sessionId);
-			throw new IllegalStateException("Unknown session state: " + stateStr, e);
+	private static ApiSessionState getApiSessionState(String sessionId) throws IOException, InterruptedException {
+		HttpRequest request = buildRequest("/sessions/" + sessionId, "GET", null);
+		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+		if (response.statusCode() != 200) {
+			throw new RuntimeException("Failed to get session state. Status: " + response.statusCode() + " Body: " + response.body());
 		}
+
+		String stateStr = parseJsonValue(response.body(), "state");
+		return ApiSessionState.valueOf(stateStr);
+	}
+
+	/**
+	 * Waits for a session to reach an expected state by polling.
+	 */
+	private static void waitForApiSessionState(String sessionId, ApiSessionState expectedState, int timeoutMinutes) throws IOException, InterruptedException {
+		System.out.printf("Waiting for session to become %s (timeout: %d minutes)...%n", expectedState, timeoutMinutes);
+		long timeoutMillis = System.currentTimeMillis() + Duration.ofMinutes(timeoutMinutes).toMillis();
+		long pollIntervalMillis = 5000;
+
+		while (System.currentTimeMillis() < timeoutMillis) {
+			ApiSessionState currentState = getApiSessionState(sessionId);
+			System.out.println("   Current state: " + currentState);
+			if (currentState == expectedState) {
+				return;
+			}
+			Thread.sleep(pollIntervalMillis);
+		}
+
+		throw new RuntimeException("Timeout: Session did not transition to " + expectedState + " within " + timeoutMinutes + " minutes.");
+	}
+
+	/**
+	 * Placeholder for where the actual Appium test logic would go.
+	 */
+	private static void runSimpleAppiumTest(URL appiumURL) {
+		System.out.println("--- Appium Test Simulation ---");
+		System.out.println("    This is where you would initialize your Appium Driver and run tests.");
+		System.out.println("    Connect to the Appium URL: " + appiumURL);
+		System.out.println("""
+                    Example test setup:
+                    MutableCapabilities caps = new MutableCapabilities();
+                    // ... add your capabilities ...
+                    AndroidDriver driver = new AndroidDriver(appiumURL, caps);
+                    // ... driver.get(...), driver.findElement(...), etc. ...
+                    driver.quit();
+            """);
+		System.out.println("Appium test simulation complete.");
+	}
+
+	// --- UTILITY METHODS ---
+
+	/**
+	 * A helper to build an HttpRequest with common settings (Auth, Headers).
+	 */
+	private static HttpRequest buildRequest(String path, String method, String body) {
+		String credentials = Base64.getEncoder().encodeToString((SAUCE_USERNAME + ":" + SAUCE_API_KEY).getBytes());
+		HttpRequest.BodyPublisher bodyPublisher = (body != null && !body.isEmpty())
+				? HttpRequest.BodyPublishers.ofString(body)
+				: HttpRequest.BodyPublishers.noBody();
+
+		return HttpRequest.newBuilder()
+				.uri(URI.create(BASE_URL + path))
+				.header("Authorization", "Basic " + credentials)
+				.header("Content-Type", "application/json")
+				.method(method, bodyPublisher)
+				.build();
+	}
+
+	/**
+	 * A very simple parser to extract a value from a JSON string without a library.
+	 * Assumes the key is unique and the value is a simple string.
+	 */
+	private static String parseJsonValue(String json, String key) {
+		String keyPattern = "\"" + key + "\":\"";
+		int startIndex = json.indexOf(keyPattern) + keyPattern.length();
+		if (startIndex < keyPattern.length()) {
+			throw new RuntimeException("Key '" + key + "' not found in JSON response: " + json);
+		}
+		int endIndex = json.indexOf("\"", startIndex);
+		return json.substring(startIndex, endIndex);
 	}
 }
-
