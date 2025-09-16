@@ -30,7 +30,6 @@ entire test suite as a single session with a reserved device.
 5. ...Run Test N
 6. Tear down the session once.
 
-This fundamental shift is the key to unlocking massive efficiency gains.
 
 ## Core Value for Testers: Speed, Control, and Efficiency
 Using an OpenAPI session isn't just a different technique; it's a better testing paradigm.
