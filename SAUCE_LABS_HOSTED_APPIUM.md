@@ -4,6 +4,8 @@ For testers, time is a critical resource. This guide demonstrates how to use the
 and decrease the runtime of your Appium test suite. This approach enables you to run more tests, get faster feedback, and gain greater 
 control over your mobile testing workflow.
 
+You can find full code sample [below](./SAUCE_LABS_HOSTED_APPIUM.md#How-It-Looks-in-Practice):
+
 ## The Test-per-Session Model vs. The Suite-per-Session Model
 
 Think about a traditional Appium test run. For every single test, you typically have to:
