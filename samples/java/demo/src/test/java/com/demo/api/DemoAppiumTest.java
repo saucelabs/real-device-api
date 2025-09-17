@@ -24,8 +24,8 @@ public class DemoAppiumTest {
 	private static URL appiumUrl;    // The Appium URL, reused for all tests
 
 	private static String BASE_URL = "https://api.us-west-1.saucelabs.com";
-	private static String SAUCE_USERNAME = "oauth-mootaz.bahri-d3cd7";
-	private static String SAUCE_ACCESS_KEY = "91a4e16b-050b-4925-b511-5e4c88cce458";
+	private static String SAUCE_USERNAME = "username";
+	private static String SAUCE_ACCESS_KEY = "access_key";
 
 	private static final HttpClient client = HttpClient.newBuilder()
 			.version(HttpClient.Version.HTTP_2)
