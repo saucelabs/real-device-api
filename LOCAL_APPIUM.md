@@ -56,7 +56,7 @@ POST /sessions
 ```
 {
   "device" : {
-    "os" : "android"
+    "os" : "ios"
   }
 }
 ```

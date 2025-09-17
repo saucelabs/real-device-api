@@ -383,11 +383,11 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
-  /sessions/{sessionId}/device/startAppiumServer:
+  /sessions/{sessionId}/appiumserver:
     post:
-      summary: Starts an appium server attached to the device session.
+      summary: Starts an appium session attached to the device session
       tags:
-        - "Device Interactions"
+        - "Appium Server"
       parameters:
         - name: sessionId
           in: path
@@ -415,8 +415,32 @@ paths:
             application/json:
               schema:
                 type: object
+                $ref: "#/components/schemas/AppiumSession"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+    get:
+      summary: Returns details of the status of the hosted appium server
+      tags:
+        - "Appium Server"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/AppiumSession"
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
@@ -731,6 +755,23 @@ components:
               detail:
                 type: string
                 example: 'The deviceId "Samsung XR" does not exist. Please ensure you provide an existing device Id.'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            description: "Error detailing a forbidden operation was attempted."
+            properties:
+              type:
+                type: string
+                example: "about:blank"
+              title:
+                type: string
+                example: "Appium already started."
+              detail:
+                type: string
+                example: "Appium server already started with version '2025-06-06'"
     NotAuthorized:
       description: Not Authorized
       content:
@@ -873,6 +914,17 @@ components:
               type: number
               format: int32
               example: 6
+        appium:
+          type: object
+          properties:
+            url:
+              type: string
+              example: "https://api.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
+              description: The hosted appium server endpoint associated to this session
+            version:
+              type: object
+              example: "stable"
+              description: The hosted appium server version
         links:
           type: object
           properties:
@@ -890,10 +942,23 @@ components:
             appiumUrl:
               type: string
               example: "https://api.staging.saucelabs.net/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/appium/wd/hub"
-              description: Endpoint to reach the appium-server for your session. Please note that you should start the server via /sessions/{sessionId}/device/startAppiumServer
+              description: Endpoint to reach the appium-server for your session. Please note that you should start the server via /sessions/{sessionId}/appiumserver
             self:
               type: string
               example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
+
+    AppiumSession:
+      type: object
+      properties:
+        url:
+          type: string
+          example: "https://api.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
+          description: The hosted appium server endpoint associated to this session
+        version:
+          type: object
+          example: "stable"
+          description: The hosted appium server version
+
     SessionCreation:
       type: object
       properties:
