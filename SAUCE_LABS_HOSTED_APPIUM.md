@@ -70,175 +70,140 @@ that an active session is already available.
 This modern Java and JUnit 5 example shows how elegantly this concept translates to code.
 
 ```java
-public class OpenApiAppiumTest {
-	// Fetches credentials from environment variables
-	private static final String SAUCE_USERNAME = System.getenv("SAUCE_USERNAME");
-	private static final String SAUCE_API_KEY = System.getenv("SAUCE_API_KEY");
+public class DemoAppiumTest {
 
-	// Base URL for the Sauce Labs RDC API - Using US-WEST
-	private static final String BASE_URL = "https://api.us-west-1.saucelabs.com/rdc/v2/";
+  private static String sessionId; // The ID for our reserved device session
+  private static URL appiumUrl;    // The Appium URL, reused for all tests
 
-	private static final HttpClient client = HttpClient.newBuilder()
-			.version(HttpClient.Version.HTTP_2)
-			.connectTimeout(Duration.ofSeconds(20))
-			.build();
+  private static String BASE_URL = "https://api.us-west-1.saucelabs.com";
+  private static String SAUCE_USERNAME = "username";
+  private static String SAUCE_ACCESS_KEY = "access_key";
 
-	public enum ApiSessionState { PENDING, CREATING, ACTIVE, CLOSING, CLOSED, ERRORED }
+  private static final HttpClient client = HttpClient.newBuilder()
+          .version(HttpClient.Version.HTTP_2)
+          .connectTimeout(Duration.ofSeconds(20))
+          .build();
+  /**
+   * This method reserves a device via the Sauce Labs  Access API and starts a persistent Appium server for that device.
+   *
+   * The resulting session ID and Appium URL are stored for all subsequent tests.
+   *
+   * Runs once before any @Test methods.
+   */
+  @BeforeAll
+  public static void setupSuite() throws Exception  {
+    var createSessionRequestBody = """
+            { "device": { "os": "android" }  }
+            """;
 
-	/**
-	 * Main entry point for the script.
-	 */
-	public static void main(String[] args) throws IOException, InterruptedException {
-		// Basic validation for credentials
-		if (SAUCE_USERNAME == null || SAUCE_API_KEY == null || SAUCE_USERNAME.isEmpty() || SAUCE_API_KEY.isEmpty()) {
-			System.err.println("Error: Please set SAUCE_USERNAME and SAUCE_API_KEY environment variables.");
-			return;
-		}
+    var createSessionResponse = POST("/rdc/v2/sessions", createSessionRequestBody);
+    System.out.println("response: " + createSessionResponse);
+    sessionId = createSessionResponse.getString("id");
 
-		System.out.println("--- Starting API Session Demo ---");
-		String sessionId = null;
-		try {
-			// 1. Create a session for an Android device
-			sessionId = createApiSession("Android");
-			System.out.println("Successfully created session. ID: " + sessionId);
+    waitForSessionToBeActive(sessionId);
 
-			// 2. Wait for the session to become active
-			waitForApiSessionState(sessionId, ApiSessionState.ACTIVE, 3);
-			System.out.println("Session is now ACTIVE.");
+    var startAppiumServerRequestBody = """
+            { "appiumVersion": "latest" }
+            """;
+    var startAppiumServerResponse = POST("/rdc/v2/sessions/%s/appiumserver".formatted(sessionId), startAppiumServerRequestBody);
+    appiumUrl = new URL(startAppiumServerResponse.getString("url"));
+  }
 
-			// 3. Start the Appium server for the active session
-			var appiumUrl = startAppiumServer(sessionId);
+  /**
+   * The FINAL cleanup. This releases the device after all tests are done.
+   */
+  @AfterAll
+  public static void tearDownSuite() throws IOException, InterruptedException {
+    if (sessionId != null) {
+      System.out.println("Releasing Device Session: " + sessionId);
+      var closeSessionResponse = DELETE("/rdc/v2/sessions/" + sessionId);
+    }
+  }
 
-			// 4. At this point, you would run your Appium tests
-			runSimpleAppiumTest(appiumUrl);
+  // --- Rapid-Fire Tests ---
+  // Each of these methods runs back-to-back on the SAME device.
 
-		} catch (Exception e) {
-			System.err.println("An error occurred during the session lifecycle: " + e.getMessage());
-			e.printStackTrace();
-		} finally {
-			// 5. Ensure the session is always closed
-			if (sessionId != null) {
-				System.out.println("--- Closing Session ---");
-				closeApiSession(sessionId);
-				System.out.println("Session marked for closing. Waiting for confirmation...");
-				waitForApiSessionState(sessionId, ApiSessionState.CLOSED, 1);
-				System.out.println("Session is confirmed CLOSED.");
-			}
-		}
-	}
+  @Test
+  public void first_test() {
+    System.out.println("Executing first test");
+    var capabilities = new MutableCapabilities();
+    var driver = new AndroidDriver(appiumUrl, capabilities);
 
-	/**
-	 * Creates a new API session.
-	 * POST /sessions
-	 */
-	private static String createApiSession(String os) throws IOException, InterruptedException {
-		String requestBody = String.format("""
-                {
-                  "device": {
-                     "os": "%s"
-                  }
-                }
-                """, os);
+    try {
+      driver.get("https://www.saucelabs.com");
+    } finally {
+      // This quits the Appium client connection for this specific test.
+      // The underlying device session remains active for the next test.
+      driver.quit();
+    }
+  }
 
-		HttpRequest request = buildRequest("/sessions", "POST", requestBody);
-		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+  @Test
+  public void second_test() {
+    System.out.println("Executing second test");
+    var capabilities = new MutableCapabilities();
+    var driver = new AndroidDriver(appiumUrl, capabilities);
 
-		if (response.statusCode() != 200) {
-			throw new RuntimeException("Failed to create session. Status: " + response.statusCode() + " Body: " + response.body());
-		}
+    try {
+      driver.get("https://www.youtube.com");
+    } finally {
+      // This quits the Appium client connection for this specific test.
+      // The underlying device session remains active for the next test.
+      driver.quit();
+    }
+  }
 
-		return parseJsonValue(response.body(), "id");
-	}
 
-	/**
-	 * Starts the Appium server for a given session.
-	 * POST /sessions/{sessionId}/appiumserver
-	 */
-	private static URL startAppiumServer(String sessionId) throws IOException, InterruptedException {
-		String requestBody = """
-                { "appiumVersion": "latest" }
-                """;
 
-		HttpRequest request = buildRequest("/sessions/" + sessionId + "/appiumserver", "POST", requestBody);
-		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+  // ... Helper methods
+  private static void waitForSessionToBeActive(String sessionId) throws Exception {
+    System.out.println("Waiting for session active...");
+    for (int i = 0; i < 5; i++) {
+      var getSessionResponse = GET("/rdc/v2/sessions/" + sessionId);
+      var currentState = getSessionResponse.getString("state");
+      System.out.println("Current state: " + currentState + " Session info: " + getSessionResponse);
 
-		if (response.statusCode() != 200) {
-			throw new RuntimeException("Failed to start Appium server. Status: " + response.statusCode() + " Body: " + response.body());
-		}
-		return new URL(parseJsonValue(response.body(), "url"));
-	}
+      if ("ACTIVE".equals(currentState)) {
+        System.out.println("Session is now ACTIVE. Exiting loop.");
+        return;
+      }
 
-	/**
-	 * Closes an active API session.
-	 * DELETE /sessions/{sessionId}
-	 */
-	private static void closeApiSession(String sessionId) throws IOException, InterruptedException {
-		HttpRequest request = buildRequest("/sessions/" + sessionId, "DELETE", null);
-		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      System.out.println("Waiting for 5 seconds...");
+      Thread.sleep(5000); // sleep 5 seconds
+    }
+    throw new Exception("Session did not become active");
+  }
 
-		if (response.statusCode() != 200) {
-			System.err.println("Warning: Failed to close session gracefully. Status: " + response.statusCode() + " Body: " + response.body());
-		}
-	}
+  // SEND POST REQUEST
+  private static JSONObject POST(String apiUrl, String requestBody) throws IOException, InterruptedException {
+    String credentials = SAUCE_USERNAME + ":" + SAUCE_ACCESS_KEY;
+    String encodedAuth = Base64.getEncoder().encodeToString(credentials.getBytes());
 
-	/**
-	 * Retrieves the current state of a session.
-	 * GET /sessions/{sessionId}
-	 */
-	private static ApiSessionState getApiSessionState(String sessionId) throws IOException, InterruptedException {
-		HttpRequest request = buildRequest("/sessions/" + sessionId, "GET", null);
-		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    var request = HttpRequest.newBuilder()
+            .uri(URI.create(BASE_URL + apiUrl))
+            .header("Authorization", "Basic " + encodedAuth)
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            .build();
 
-		if (response.statusCode() != 200) {
-			throw new RuntimeException("Failed to get session state. Status: " + response.statusCode() + " Body: " + response.body());
-		}
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-		String stateStr = parseJsonValue(response.body(), "state");
-		return ApiSessionState.valueOf(stateStr);
-	}
+    String responseBody = response.body();
+    return new JSONObject(responseBody);
+  }
 
-	/**
-	 * Waits for a session to reach an expected state
-	 */
-	private static void waitForApiSessionState(String sessionId, ApiSessionState expectedState, int timeoutMinutes) throws IOException, InterruptedException {
-		System.out.printf("Waiting for session to become %s (timeout: %d minutes)...%n", expectedState, timeoutMinutes);
-		long timeoutMillis = System.currentTimeMillis() + Duration.ofMinutes(timeoutMinutes).toMillis();
-		long pollIntervalMillis = 5000;
+  // SEND GET REQUEST
+  private static JSONObject GET(String apiUrl) throws IOException, InterruptedException {
+    // Implementation
+  }
 
-		while (System.currentTimeMillis() < timeoutMillis) {
-			ApiSessionState currentState = getApiSessionState(sessionId);
-			System.out.println("   Current state: " + currentState);
-			if (currentState == expectedState) {
-				return;
-			}
-			Thread.sleep(pollIntervalMillis);
-		}
-		throw new RuntimeException("Timeout: Session did not transition to " + expectedState + " within " + timeoutMinutes + " minutes.");
-	}
+  // HTTP DELETE REQUEST
+  private static JSONObject DELETE(String apiUrl) throws IOException, InterruptedException {
+    // Implementation
+  }
 
-	/**
-	 * Actual Appium test.
-	 */
-	private static void runSimpleAppiumTest(URL appiumURL) {
-		System.out.println("--- Appium Test Simulation ---");
-		System.out.println("    This is where you would initialize your Appium Driver and run tests.");
-		System.out.println("    Connect to the Appium URL: " + appiumURL);
-		System.out.println("""
-                    Example test setup:
-                    MutableCapabilities caps = new MutableCapabilities();
-                    // ... add your capabilities ...
-                    AndroidDriver driver = new AndroidDriver(appiumURL, caps);
-                    // ... driver.get(...), driver.findElement(...), etc. ...
-                    driver.quit();
-            """);
-		System.out.println("Appium test simulation complete.");
-	}
-    // ... Helper Methods
 }
 ```
 
-***Note on Running the Example:***
-To run this code, save it as `OpenApiAppiumTest.java`, set your `SAUCE_USERNAME` and `SAUCE_API_KEY` environment variables, then compile 
-with `javac OpenApiAppiumTest.java` and execute with `java OpenApiAppiumTest`.
-
-For a complete runnable example (including all helper methods), check out our [Java sample](./samples/java/tests/OpenApiAppiumTest.java).
+***Note on Running the Example:*** For a complete, runnable example that includes all helper methods, please check out our [Java sample.](./samples/java/demo) 
+To run the tests, navigate to the `samples/java/tests` directory and execute the command `mvn test`.
