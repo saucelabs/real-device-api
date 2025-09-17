@@ -21,8 +21,8 @@ The WebSocket API provides real-time streams of data from your device sessions. 
 - **Usage:** Connect to this socket to receive a continuous stream of device screenshots for monitoring or recording purposes.
 
 ### Companion Socket
-- **Purpose:** Streams device logs and other real-time device events.
-- **Data format:** JSON messages. Each message includes a `type` field to distinguish between log messages and other events.
+- **Purpose:** Streams device logs, appium logs, network logs and other real-time device events.
+- **Data format:** JSON messages. Each message includes a `type` field to distinguish between log messages and other events. By default you will receive `device.log.message` in this socket. If you start an appium server, or network capture then `appium.log.message` or `device.har.entry` respectively will be written to the socket.
 - **Usage:** Connect to this socket to receive live logs and event notifications from your device session.
 
 #### Example: Log Message
