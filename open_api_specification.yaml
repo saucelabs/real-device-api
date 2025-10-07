@@ -383,6 +383,71 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/launchWDA:
+    post:
+      summary: Launch WDA installed on the device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              $ref: "#/components/schemas/LaunchWDARequest"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/RunningWDA"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "409":
+          $ref: "#/components/responses/WDAAlreadyStarted"
+
+  /sessions/{sessionId}/device/checkWDAStatus:
+    post:
+      summary: Get launching status for WDA
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/RunningWDA"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
   /sessions/{sessionId}/appiumserver:
     post:
       summary: Starts an appium session attached to the device session
@@ -782,6 +847,22 @@ components:
               detail:
                 type: string
                 example: Authorization failed
+    WDAAlreadyStarted:
+      description: WDA already started
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: "about:blank"
+              title:
+                type: string
+                example: "WDARunner already started"
+              detail:
+                type: string
+                example: "Current WDA state: RUNNING."
     DeviceSessionNotFound:
       description: Not Found
       content:
@@ -1009,6 +1090,29 @@ components:
             - "PENDING"
             - "FINISHED"
             - "ERROR"
+    LaunchWDARequest:
+      type: object
+      properties:
+        bundleId:
+          type: string
+    RunningWDA:
+      type: object
+      properties:
+        bundleId:
+          type: string
+        devicePort:
+          type: number
+        hostPort:
+          type: number
+        state:
+          type: string
+          enum:
+            - "PENDING"
+            - "LAUNCHING"
+            - "RUNNING"
+            - "ERROR"
+        error:
+          type: string
     AppInstallation:
       type: object
       description: Configuration for installing an app on a device.
