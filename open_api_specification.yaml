@@ -383,7 +383,7 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
-  /sessions/{sessionId}/device/launchWDA:
+  /sessions/{sessionId}/device/launchWebDriverAgent:
     post:
       summary: Launch WDA installed on the device
       tags:
@@ -417,7 +417,7 @@ paths:
         "409":
           $ref: "#/components/responses/WDAAlreadyStarted"
 
-  /sessions/{sessionId}/device/checkWDAStatus:
+  /sessions/{sessionId}/device/checkWebDriverAgentStatus:
     post:
       summary: Get launching status for WDA
       tags:
