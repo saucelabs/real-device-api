@@ -1095,15 +1095,23 @@ components:
       properties:
         bundleId:
           type: string
+          description: "Bundle identifier of the installed WDA"
+          example: "com.facebook.WebDriverAgent"
     RunningWDA:
       type: object
       properties:
         bundleId:
           type: string
+          description: "Bundle identifier of the running WDA"
+          example: "com.facebook.WebDriverAgent"
         devicePort:
           type: number
+          description: "Port of WDA running in the device"
+          example: 18100
         hostPort:
           type: number
+          description: "Forwarded WDA for hosted appium use"
+          example: 5900
         state:
           type: string
           enum:
