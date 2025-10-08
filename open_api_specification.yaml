@@ -371,7 +371,7 @@ paths:
                   example: "PORTRAIT"
                 locale:
                   type: string
-                  description: "**Android only.** Sets the system-wide language and country. The format should be a standard locale identifier (e.g., `language_COUNTRY`). This setting is not supported on **iOS** because it requires a device reboot."
+                  description: "**Android only.** Sets the system-wide language and country. The value must be a valid IETF BCP 47 language tag (e.g., 'en-US', 'fr-CA'). This setting is not supported on **iOS** because it requires a device reboot."
                   example: "en_US"
                 animations:
                   type: boolean
