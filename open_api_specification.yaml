@@ -448,6 +448,30 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/takeScreenshot:
+    post:
+      summary: Take a screenshot from device
+      description: Takes a screenshot from a device, and returns a PNG representation.
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
   /sessions/{sessionId}/appiumserver:
     post:
       summary: Starts an appium session attached to the device session
