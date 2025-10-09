@@ -213,7 +213,7 @@ paths:
           $ref: "#/components/responses/DeviceSessionNotFound"
         "502":
           description: Temporary network error while proxying adb shell command to device.
-          content: 
+          content:
             application/problem+json:
               schema:
                 type: object
@@ -229,7 +229,7 @@ paths:
                     example: Temporary network error occurred while sending adb command to device. Please try again or pick another device. If this issue persists please get in contact with your Sauce Labs representative.
         "504":
           description: Timeout occured while proxying adb shell command to device.
-          content: 
+          content:
             application/problem+json:
               schema:
                 type: object
@@ -333,6 +333,57 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/AppInstallationStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
+  /sessions/{sessionId}/device/applySettings:
+    post:
+      summary: Change device configuration
+      description: |
+        Changes device settings such as orientation, locale, or animations during an active session. 
+        The request body must contain **at least one** of the properties below.
+        **Note**: Some settings are OS-specific. Please review the parameter descriptions for details.
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                orientation:
+                  type: string
+                  description: "The desired screen orientation. Supported on both **Android** and **iOS**."
+                  enum:
+                    - "PORTRAIT"
+                    - "LANDSCAPE"
+                  example: "PORTRAIT"
+                locale:
+                  type: string
+                  description: "**Android only.** Sets the system-wide language and country. The value must be a valid IETF BCP 47 language tag (e.g., 'en-US', 'fr-CA'). This setting is not supported on **iOS** because it requires a device reboot."
+                  example: "en_US"
+                animations:
+                  type: boolean
+                  description: "**Android only.** Enables or disables system animations, which can improve test stability and speed. This setting is not supported on **iOS**."
+                  example: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
