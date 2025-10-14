@@ -83,6 +83,11 @@ paths:
                     tunnel:
                       type: object
                       $ref: "#/components/schemas/TunnelConfiguration"
+                    sessionDuration:
+                      type: string
+                      format: ISO-8601
+                      description: The duration of the session in ISO-8601 format. This is used to calculate the time at which the session will expire and be forcefully closed. Please note that for sessions that last longer then 6 hours, we might forcefully close the session before the 'expiresAt' time. The default value is 6 hours, the max value is 24 hours.
+                      example: "PT1H"
       responses:
         "200":
           description: Ok
@@ -1040,6 +1045,11 @@ components:
           $ref: "#/components/schemas/SessionId"
         state:
           $ref: "#/components/schemas/SessionState"
+        expiresAt:
+          type: string
+          format: date-time
+          description: The date and time when the session will expire, in UTC. If the session is still active after this date, it will be forcefully closed. After this date, the session will be deleted. You can configure the expiresAt time using the 'sessionDuration' parameter when creating a session. Please note that for sessions that last longer then 6 hours, we might forcefully close the session before the expiresAt time.
+          example: "2025-06-06T10:00:00Z"
         device:
           type: object
           properties:
