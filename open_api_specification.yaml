@@ -343,6 +343,53 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/uninstallApp:
+    post:
+      summary: Uninstall an app currently installed on the device
+      tags:
+        - "Device Interactions"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: "Requires either a 'bundleId' for iOS or a 'packageName' for Android, but not both."
+              oneOf:
+                - type: object
+                  required:
+                    - bundleId
+                  properties:
+                    bundleId:
+                      type: string
+                      description: "The bundle identifier of the iOS app to uninstall."
+                      example: "com.saucelabs.rdc.demo"
+                - type: object
+                  required:
+                    - packageName
+                  properties:
+                    packageName:
+                      type: string
+                      description: "The package name of the Android app to uninstall."
+                      example: "com.saucelabs.mydemoapp.android"
+      responses:
+        "200":
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+
   /sessions/{sessionId}/device/applySettings:
     post:
       summary: Change device configuration
