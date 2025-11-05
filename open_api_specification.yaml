@@ -12,8 +12,6 @@ servers:
     description: us-east
 security:
   - basicAuth: []
-  
-  
 tags: 
   - name: Device Catalog
     description: View the catalog of devices available to you and the current state of the devices.
