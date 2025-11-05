@@ -12,11 +12,24 @@ servers:
     description: us-east
 security:
   - basicAuth: []
+  
+  
+tags: 
+  - name: Device Catalog
+    description: View the catalog of devices available to you and the current state of the devices.
+  - name: Session Lifecycle
+    description: Create, Inspect and Close your Sauce Labs Real Device session.
+  - name: Device Interactions
+    description: Interact with your Device.
+  - name: Appium Server
+    description: Start an Appium Server in our Sauce Cloud. This server runs next to your device and will remain active as long as the device session is active.
+  - name: HTTP Proxy
+    description: Allows you proxy HTTP/S to your device. Can be used as a port-forward to your device.
 paths:
   /devices/status:
     get:
       summary: "List the status of all devices"
-      description: "Lists the current status of all devices. For private devices, additional details are available, including the precise state and current user. The data reflects the device state with a maximum delay of 1 second at the 99th percentile (p99)."
+      description: "Lists the current status of all devices. For private devices, additional details are available, including the precise state and current user. The delay of this state is < 1s."
       tags:
         - "Device Catalog"
       parameters:
@@ -34,7 +47,7 @@ paths:
             type: boolean
         - name: deviceName
           in: query
-          description: "Filter by a device identifier. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` (e.g., \"iPhone_13_real\") and the `deviceName` fields of a device. For more details on regex patterns, see the Sauce Labs documentation on Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)."
+          description: "Filter by a device identifier. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` (e.g., \"iPhone_13_real\") and the `deviceName` fields of a device. For more details see the Sauce Labs [documentation on device selection](https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)."
           schema:
             type: string
             example: "iPhone.*"
@@ -70,7 +83,7 @@ paths:
                   properties:
                     deviceName:
                       type: string
-                      description: "Specify a device for the session. This value can be a specific ID (e.g., \"iPhone_16_real\") or a regular expression (regex) to dynamically allocate a device from a group. The filter is applied against the `descriptor` and `deviceName` fields of available devices. If omitted, Sauce Labs will select any available device. For more details, see the documentation on Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)."
+                      description: "Select by device identifier. If omitted we will select any devices. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` (e.g., \"iPhone_13_real\") and the `deviceName` fields of a device. For more details see the Sauce Labs [documentation on device selection](https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)."
                       example: "iPhone_16_real"
                     os:
                       description: Filter by operating system (Android or iOS). The enum is case insensitive.
@@ -112,7 +125,7 @@ paths:
         - name: deviceName
           in: query
           required: false
-          description: "Filter sessions by device identifier. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` and `deviceName` fields associated with the session's device. For more details on regex patterns, see the Sauce Labs documentation on Dynamic Device Allocation (https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)."
+          description: "Filter by a device identifier. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` (e.g., \"iPhone_13_real\") and the `deviceName` fields of a device. For more details see the Sauce Labs [documentation on device selection](https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation).."
           schema:
             type: string
       responses:
@@ -577,7 +590,7 @@ paths:
 
   /sessions/{sessionId}/appiumserver:
     post:
-      summary: Starts an appium session attached to the device session
+      summary: Starts an appium server that runs next to the device.
       tags:
         - "Appium Server"
       parameters:
@@ -638,7 +651,8 @@ paths:
 
   /sessions/{sessionId}/device/proxy/http/{targetHost}/{targetPort}/{targetPath}:
     get:
-      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided GET request and proxies the response from the server as the proxy in the device receives it
+      summary: Forward a single http GET request via a proxy running on the device.
+      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided GET request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -685,7 +699,8 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
     post:
-      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided POST request and proxies the response from the server as the proxy in the device receives it
+      summary: Forward a single http POST request via a proxy running on the device.
+      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided POST request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -732,7 +747,8 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
     put:
-      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided PUT request and proxies the response from the server as the proxy in the device receives it
+      summary: Forward a single http PUT request via a proxy running on the device.
+      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided PUT request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -779,7 +795,8 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
     delete:
-      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided DELETE request and proxies the response from the server as the proxy in the device receives it
+      summary: Forward a single http DELETE request via a proxy running on the device.
+      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided DELETE request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -826,7 +843,8 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
     head:
-      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided HEAD request and proxies the response from the server as the proxy in the device receives it
+      summary: Forward a single http HEAD request via a proxy running on the device.
+      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided HEAD request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -873,7 +891,8 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
     options:
-      summary: Forward a single http request via a proxy running on the device. Tranparently forwards the provided OPTIONS request and proxies the response from the server as the proxy in the device receives it
+      summary: Forward a single http GET request via a proxy running on the device.
+      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided OPTIONS request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
