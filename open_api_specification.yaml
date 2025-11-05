@@ -1151,7 +1151,7 @@ components:
           properties:
             url:
               type: string
-              example: "https://api.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
+              example: "https://api.us-west-1.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
               description: The hosted appium server endpoint associated to this session
             version:
               type: object
@@ -1162,29 +1162,29 @@ components:
           properties:
             ioWebsocketUrl:
               type: string
-              example: "wss://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/io"
+              example: "wss://api.us-west-1.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/io"
             eventsWebsocketUrl:
               type: string
-              example: "wss://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/events"
+              example: "wss://api.us-west-1.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/wss/events"
               description: Websocket for retrieving realtime logs, device events, and some statistics
             liveViewUrl:
               type: string
-              example: "https://app.staging.saucelabs.net/live/mobile/dataCenters/US/devices/Samsung_Galaxy_S8_real2/shared/123e4567-e89b-12d3-a456-426614174000"
+              example: "https://app.saucelabs.com/live/mobile/dataCenters/US/devices/Samsung_Galaxy_S8_real2/shared/123e4567-e89b-12d3-a456-426614174000"
               description: Live test view for the openapi session
             appiumUrl:
               type: string
-              example: "https://api.staging.saucelabs.net/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/appium/wd/hub"
+              example: "https://api.us-west-1.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/appium/wd/hub"
               description: Endpoint to reach the appium-server for your session. Please note that you should start the server via /sessions/{sessionId}/appiumserver
             self:
               type: string
-              example: "https://api.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
+              example: "https://api.us-west-1.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
 
     AppiumSession:
       type: object
       properties:
         url:
           type: string
-          example: "https://api.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
+          example: "https://api.us-west-1.saucelabs.com/rdc/v2/sessions/2fe09ae3-5d01-4712-bfc0-1d873d20e554/appium/wd/hub"
           description: The hosted appium server endpoint associated to this session
         version:
           type: object
