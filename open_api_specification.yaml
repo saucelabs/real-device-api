@@ -1121,7 +1121,7 @@ components:
           format: date-time
           description: |
             For **closed*/errored* sessions, this is the UTC timestamp until which the session is retained. After this timestamp the session will be deleted. It is mutually exclusive with `expiresAt`. We typically retain sessions for 5 mintes after they are closed or errored.
-          example: "2025-06-06T10:00:00Z"
+          example: null
         device:
           type: object
           properties:
@@ -1177,10 +1177,6 @@ components:
               type: string
               example: "https://app.saucelabs.com/live/mobile/dataCenters/US/devices/Samsung_Galaxy_S8_real2/shared/123e4567-e89b-12d3-a456-426614174000"
               description: Live test view for the openapi session
-            appiumUrl:
-              type: string
-              example: "https://api.us-west-1.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000/appium/wd/hub"
-              description: Endpoint to reach the appium-server for your session. Please note that you should start the server via /sessions/{sessionId}/appiumserver
             self:
               type: string
               example: "https://api.us-west-1.saucelabs.com/rdc/v2/sessions/123e4567-e89b-12d3-a456-426614174000"
