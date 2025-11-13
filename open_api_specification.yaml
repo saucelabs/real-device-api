@@ -1112,7 +1112,15 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: The date and time when the session will expire, in UTC. If the session is still active after this date, it will be forcefully closed. After this date, the session will be deleted. You can configure the expiresAt time using the 'sessionDuration' parameter when creating a session. Please note that for sessions that last longer then 6 hours, we might forcefully close the session before the expiresAt time.
+          description: |
+            For active sessions, this is the UTC timestamp until which the session is actively kept alive. After this timestamp the session will be forcefully closed. It is configured using the `sessionDuration` parameter at creation. When a session is closed it will transition to terminal state and the `retainUntil` timestamp will be set.
+            Please note that for sessions that last longer than 6 hours, we might forcefully close the session before the `expiresAt` time.
+          example: "2025-06-06T10:00:00Z"
+        retainUntil:
+          type: string
+          format: date-time
+          description: |
+            For **closed*/errored* sessions, this is the UTC timestamp until which the session is retained. After this timestamp the session will be deleted. It is mutually exclusive with `expiresAt`. We typically retain sessions for 5 mintes after they are closed or errored.
           example: "2025-06-06T10:00:00Z"
         device:
           type: object
