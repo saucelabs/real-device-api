@@ -3,31 +3,15 @@ info:
   version: "1.0.0"
   title: "Real Device Access API"
   x-last-modified: "2025-01-20"
+  x-beta: true
   description: |
-    The Sauce Labs Real Device Access API provides programmatic access to real mobile devices in the Sauce Labs cloud infrastructure. This HTTP API enables you to automate device testing workflows, manage device sessions, and interact with iOS and Android devices remotely.
-    ## Overview
-    This API allows you to:
-    - **Browse the device catalog** - Query available real devices, check their status, and filter by device type, operating system, or availability
-    - **Manage device sessions** - Create, monitor, and close device sessions with full lifecycle control
-    - **Interact with devices** - Execute shell commands, install/uninstall apps, take screenshots, change device settings, and launch applications
-    - **Host Appium servers** - Start and manage Appium servers that run alongside your device sessions for automated testing
-    - **Proxy HTTP traffic** - Forward HTTP requests through the device for advanced testing scenarios
-    ## Key Features
-    ### Session-Based Device Access
-    Reserve a device for extended periods and run multiple tests or operations on a single session. This suite-per-session model eliminates repetitive setup and teardown overhead, significantly accelerating your test execution.
-    ### Real-Time Device Interaction
-    Execute ADB shell commands on Android devices, install apps from Sauce Labs App Storage, modify device settings (orientation, locale, animations), and capture screenshots—all through simple HTTP requests.
-    ### Hosted Appium Integration
-    Launch Appium servers directly in the Sauce Labs cloud infrastructure, running adjacent to your device. This eliminates the need to manage Appium infrastructure while providing low-latency connections to your devices.
-    ### WebSocket Support
-    In addition to the HTTP API, active sessions provide WebSocket endpoints for streaming real-time device data, including live screen recordings, device logs, and Appium logs.
-    ## Authentication
-    All API requests require HTTP Basic Authentication using your Sauce Labs credentials:
-    - **Username** - Your Sauce Labs username
-    - **Password** - Your Sauce Labs access key
-    You can find both credentials in the **Account > User Settings** section of the Sauce Labs UI.
-    ## Open Beta
-    This API is currently under active development and is subject to change.
+    Access Sauce Labs' specialized real device farm to automate, test, and develop on real iOS and Android devices in the cloud. This API opens up our device infrastructure, enabling you to go beyond traditional testing workflows. Reserve a device once, then run multiple operations back-to-back on the same session—whether you're running automated tests, developing new features, or building custom automation workflows.
+    
+    Once you have an active device session, interact with the device directly—install apps, execute shell commands, modify device settings, capture screenshots, and launch applications. For Android devices, access low-level ADB capabilities as if the device is connected locally. For iOS devices, access WebDriverAgent directly, or deploy your own fork of WebDriverAgent on the device. Our app resigning and instrumentation capabilities automatically handle code signing and provisioning for our diverse device fleet. Start a hosted vanilla Appium server, connect your own automation tools, or use the HTTP proxy for advanced scenarios.
+    
+    ## WebSocket Endpoints
+    
+    Active sessions return WebSocket URLs (`ioWebsocketUrl`, `eventsWebsocketUrl`) for real-time streams. WebSocket usage is documented separately from this HTTP API specification.
     
 servers:
   - url: https://api.us-west-1.saucelabs.com/rdc/v2/
