@@ -23,8 +23,8 @@ info:
     In addition to the HTTP API, active sessions provide WebSocket endpoints for streaming real-time device data, including live screen recordings, device logs, and Appium logs.
     ## Authentication
     All API requests require HTTP Basic Authentication using your Sauce Labs credentials:
-    - **Username**: Your Sauce Labs username
-    - **Password**: Your Sauce Labs access key
+    - **Username** - Your Sauce Labs username
+    - **Password** - Your Sauce Labs access key
     You can find both credentials in the **Account > User Settings** section of the Sauce Labs UI.
     ## Open Beta
     This API is currently under active development and is subject to change.
