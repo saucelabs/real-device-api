@@ -9,7 +9,7 @@ info:
     
     Once you have an active device session, interact with the device directly—install apps, execute shell commands, modify device settings, capture screenshots, and launch applications. For Android devices, access low-level ADB capabilities as if the device is connected locally. For iOS devices, access WebDriverAgent directly, or deploy your own fork of WebDriverAgent on the device. Our app resigning and instrumentation capabilities automatically handle code signing and provisioning for our diverse device fleet. Start a hosted Appium server, connect your own automation tools, or use the HTTP proxy for advanced scenarios.
     
-    ## WebSocket Endpoints
+    #### WebSocket Endpoints
     
     Active sessions return WebSocket URLs (`ioWebsocketUrl`, `eventsWebsocketUrl`) for real-time streams. WebSocket usage is documented separately from this HTTP API specification.
     
