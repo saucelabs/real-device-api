@@ -7,7 +7,7 @@ info:
   description: |
     Access Sauce Labs' specialized real device farm to automate, test, and develop on real iOS and Android devices in the cloud. This API opens up our device infrastructure, enabling you to go beyond traditional testing workflows. Reserve a device once, then run multiple operations back-to-back on the same session—whether you're running automated tests, developing new features, or building custom automation workflows.
     
-    Once you have an active device session, interact with the device directly—install apps, execute shell commands, modify device settings, capture screenshots, and launch applications. For Android devices, access low-level ADB capabilities as if the device is connected locally. For iOS devices, access WebDriverAgent directly, or deploy your own fork of WebDriverAgent on the device. Our app resigning and instrumentation capabilities automatically handle code signing and provisioning for our diverse device fleet. Start a hosted vanilla Appium server, connect your own automation tools, or use the HTTP proxy for advanced scenarios.
+    Once you have an active device session, interact with the device directly—install apps, execute shell commands, modify device settings, capture screenshots, and launch applications. For Android devices, access low-level ADB capabilities as if the device is connected locally. For iOS devices, access WebDriverAgent directly, or deploy your own fork of WebDriverAgent on the device. Our app resigning and instrumentation capabilities automatically handle code signing and provisioning for our diverse device fleet. Start a hosted Appium server, connect your own automation tools, or use the HTTP proxy for advanced scenarios.
     
     ## WebSocket Endpoints
     
