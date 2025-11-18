@@ -1,19 +1,10 @@
 openapi: "3.0.0"
 info:
   version: "1.0.0"
-  title: "Real Device API"
+  title: "Real Device Access API"
   x-last-modified: "2025-01-20"
-servers:
-  - url: https://api.us-west-1.saucelabs.com/rdc/v2/
-    description: us-west
-  - url: https://api.eu-central-1.saucelabs.com/rdc/v2/
-    description: eu-central
-  - url: https://api.us-east-4.saucelabs.com/rdc/v2/
-    description: us-east
-security:
-  - basicAuth: []
-description: |
-  The Sauce Labs Real Device Access API provides programmatic access to real mobile devices in the Sauce Labs cloud infrastructure. This HTTP API enables you to automate device testing workflows, manage device sessions, and interact with iOS and Android devices remotely.
+  description: |
+    The Sauce Labs Real Device Access API provides programmatic access to real mobile devices in the Sauce Labs cloud infrastructure. This HTTP API enables you to automate device testing workflows, manage device sessions, and interact with iOS and Android devices remotely.
 
   ## Overview
 
@@ -49,6 +40,17 @@ description: |
   ## Open Beta
 
   This API is currently under active development and is subject to change.
+  
+servers:
+  - url: https://api.us-west-1.saucelabs.com/rdc/v2/
+    description: US West
+  - url: https://api.eu-central-1.saucelabs.com/rdc/v2/
+    description: EU Central
+  - url: https://api.us-east-4.saucelabs.com/rdc/v2/
+    description: US East
+security:
+  - basicAuth: []
+
 tags: 
   - name: Device Catalog
     description: View the catalog of devices available to you and the current state of the devices.
