@@ -104,7 +104,8 @@ paths:
                     sessionDuration:
                       type: string
                       format: ISO-8601
-                      description: Session duration in ISO-8601 format. Sets the expiresAt timestamp; sessions will be forcefully closed after that time. Default: 6 hours. Max: 24 hours. Sessions longer than 6 hours may be forcefully closed before expiresAt.
+                      description: | 
+                        Session duration in ISO-8601 format. Sets the expiresAt timestamp; sessions will be forcefully closed after that time. Default: 6 hours. Max: 24 hours. Sessions longer than 6 hours may be forcefully closed before expiresAt.
                       example: "PT1H"
       responses:
         "200":
