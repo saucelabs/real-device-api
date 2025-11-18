@@ -1,17 +1,24 @@
 openapi: "3.0.0"
 info:
   version: "1.0.0"
-  title: "Real Device API"
+  title: "Real Device Access API"
   x-last-modified: "2025-01-20"
+  x-beta: true
+  description: |
+    Access Sauce Labs' specialized real device farm to automate, test, and develop on real iOS and Android devices in the cloud. This API opens up our device infrastructure, enabling you to go beyond traditional testing workflows. Reserve a device once, then run multiple operations back-to-back on the same session—whether you're running automated tests, developing new features, or building custom automation workflows.
+    
+    Once you have an active device session, interact with the device directly—install apps, execute shell commands, modify device settings, capture screenshots, and launch applications. For Android devices, access low-level ADB capabilities as if the device is connected locally. For iOS devices, access WebDriverAgent directly, or deploy your own fork of WebDriverAgent on the device. Our app resigning and instrumentation capabilities automatically handle code signing and provisioning for our diverse device fleet. Start a hosted Appium server, connect your own automation tools, or use the HTTP proxy for advanced scenarios.
+    
 servers:
   - url: https://api.us-west-1.saucelabs.com/rdc/v2/
-    description: us-west
+    description: US West
   - url: https://api.eu-central-1.saucelabs.com/rdc/v2/
-    description: eu-central
+    description: EU Central
   - url: https://api.us-east-4.saucelabs.com/rdc/v2/
-    description: us-east
+    description: US East
 security:
   - basicAuth: []
+
 tags: 
   - name: Device Catalog
     description: View the catalog of devices available to you and the current state of the devices.
@@ -22,7 +29,7 @@ tags:
   - name: Appium Server
     description: Start an Appium Server in our Sauce Cloud. This server runs next to your device and will remain active as long as the device session is active.
   - name: HTTP Proxy
-    description: Allows you proxy HTTP/S to your device. Can be used as a port-forward to your device.
+    description: Allows you to proxy HTTP/S to your device. Can be used as a port-forward to your device.
 paths:
   /devices/status:
     get:
@@ -45,7 +52,7 @@ paths:
             type: boolean
         - name: deviceName
           in: query
-          description: "Filter by a device identifier. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` (e.g., \"iPhone_13_real\") and the `deviceName` fields of a device. For more details see the Sauce Labs [documentation on device selection](https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)."
+          description: "Filter by device identifier (supports regex). Matches both descriptor and deviceName fields."
           schema:
             type: string
             example: "iPhone.*"
@@ -81,7 +88,7 @@ paths:
                   properties:
                     deviceName:
                       type: string
-                      description: "Select by device identifier. If omitted we will select any devices. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` (e.g., \"iPhone_13_real\") and the `deviceName` fields of a device. For more details see the Sauce Labs [documentation on device selection](https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation)."
+                      description: "Device identifier (supports regex). If omitted, any device will be selected. Matches both descriptor and deviceName fields."
                       example: "iPhone_16_real"
                     os:
                       description: Filter by operating system (Android or iOS). The enum is case insensitive.
@@ -97,7 +104,7 @@ paths:
                     sessionDuration:
                       type: string
                       format: ISO-8601
-                      description: The duration of the session in ISO-8601 format. This is used to calculate the time at which the session will expire and be forcefully closed. Please note that for sessions that last longer then 6 hours, we might forcefully close the session before the 'expiresAt' time. The default value is 6 hours, the max value is 24 hours.
+                      description: 'Session duration in ISO-8601 format. Sets the expiresAt timestamp; sessions will be forcefully closed after that time. Default: 6 hours. Max: 24 hours. Sessions longer than 6 hours may be forcefully closed before expiresAt.'
                       example: "PT1H"
       responses:
         "200":
@@ -123,7 +130,7 @@ paths:
         - name: deviceName
           in: query
           required: false
-          description: "Filter by a device identifier. This value can be a specific ID or a regular expression (regex). The filter is applied to both the `descriptor` (e.g., \"iPhone_13_real\") and the `deviceName` fields of a device. For more details see the Sauce Labs [documentation on device selection](https://docs.saucelabs.com/mobile-apps/supported-devices/#static-and-dynamic-device-allocation).."
+          description: "Filter by device identifier (supports regex). Matches both descriptor and deviceName fields."
           schema:
             type: string
       responses:
@@ -221,7 +228,7 @@ paths:
                 properties:
                   stdout:
                     type: string
-                    description: the stdout of your shell command.
+                    description: The stdout of your shell command.
                     example: "acct                debug_ramdisk      keyrefuge       sdcard\napex                default.prop       linkerconfig    sepolicy_version\naudit_filter_table  dev                lost+found      spu\nbin                 dpolicy            mnt             storage\n"
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -244,7 +251,7 @@ paths:
                     type: string
                     example: Temporary network error occurred while sending adb command to device. Please try again or pick another device. If this issue persists please get in contact with your Sauce Labs representative.
         "504":
-          description: Timeout occured while proxying adb shell command to device.
+          description: Timeout occurred while proxying adb shell command to device.
           content:
             application/problem+json:
               schema:
@@ -263,7 +270,7 @@ paths:
   /sessions/{sessionId}/device/openUrl:
     post:
       summary: Open a url (through browser) or a deeplink to an app
-      description: "Depending on a scheme the OS will decide how to open the url. 'https:' is usually handled by the browser, 'tel:' opens the telephone. If you registered a custom scheme for your app, your app will be opened. Please note: as of this moment deeplinking is only supported for iOS, for Android we will open everything in Chrome!"
+      description: "Opens a URL or deeplink based on the URL scheme. iOS supports deeplinking; Android opens all URLs in Chrome."
       tags:
         - "Device Interactions"
       parameters:
@@ -434,11 +441,11 @@ paths:
                   example: "PORTRAIT"
                 locale:
                   type: string
-                  description: "**Android only.** Sets the system-wide language and country. The value must be a valid IETF BCP 47 language tag (e.g., 'en-US', 'fr-CA'). This setting is not supported on **iOS** because it requires a device reboot."
+                  description: "**Android only.** Sets the system-wide language and country (IETF BCP 47 format, e.g., 'en-US', 'fr-CA'). Not supported on iOS because changing locale requires a device reboot, which is not supported during an active session."
                   example: "en_US"
                 animations:
                   type: boolean
-                  description: "**Android only.** Enables or disables system animations, which can improve test stability and speed. This setting is not supported on **iOS**."
+                  description: "**Android only.** Enable or disable system animations to improve test stability and speed."
                   example: false
       responses:
         "200":
@@ -565,7 +572,7 @@ paths:
   /sessions/{sessionId}/device/takeScreenshot:
     post:
       summary: Take a screenshot from device
-      description: Takes a screenshot from a device, and returns a PNG representation.
+      description: Takes a screenshot from the device and returns a PNG representation.
       tags:
         - "Device Interactions"
       parameters:
@@ -588,7 +595,7 @@ paths:
 
   /sessions/{sessionId}/appiumserver:
     post:
-      summary: Starts an appium server that runs next to the device.
+      summary: Start an Appium server that runs next to the device.
       tags:
         - "Appium Server"
       parameters:
@@ -626,7 +633,7 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
     get:
-      summary: Returns details of the status of the hosted appium server
+      summary: Get details of the status of the hosted appium server
       tags:
         - "Appium Server"
       parameters:
@@ -650,7 +657,7 @@ paths:
   /sessions/{sessionId}/device/proxy/http/{targetHost}/{targetPort}/{targetPath}:
     get:
       summary: Forward a single http GET request via a proxy running on the device.
-      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided GET request and proxies the response from the server as the proxy in the device receives it
+      description: Forward a single http request via a proxy running on the device. Transparently forwards the provided GET request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -670,14 +677,14 @@ paths:
         - name: targetPort
           in: path
           required: true
-          description: The port the target host is listening in
+          description: The port the target host is listening on
           schema:
             type: string
             example: "8100"
         - name: targetPath
           in: path
           required: true
-          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          description: The path to make the request to. Can contain query parameters, which will be forwarded too.
           schema:
             type: string
             example: "status"
@@ -698,7 +705,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
     post:
       summary: Forward a single http POST request via a proxy running on the device.
-      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided POST request and proxies the response from the server as the proxy in the device receives it
+      description: Forward a single http request via a proxy running on the device. Transparently forwards the provided POST request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -718,14 +725,14 @@ paths:
         - name: targetPort
           in: path
           required: true
-          description: The port the target host is listening in
+          description: The port the target host is listening on
           schema:
             type: string
             example: "8100"
         - name: targetPath
           in: path
           required: true
-          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          description: The path to make the request to. Can contain query parameters, which will be forwarded too.
           schema:
             type: string
             example: "status"
@@ -746,7 +753,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
     put:
       summary: Forward a single http PUT request via a proxy running on the device.
-      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided PUT request and proxies the response from the server as the proxy in the device receives it
+      description: Forward a single http request via a proxy running on the device. Transparently forwards the provided PUT request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -766,14 +773,14 @@ paths:
         - name: targetPort
           in: path
           required: true
-          description: The port the target host is listening in
+          description: The port the target host is listening on
           schema:
             type: string
             example: "8100"
         - name: targetPath
           in: path
           required: true
-          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          description: The path to make the request to. Can contain query parameters, which will be forwarded too.
           schema:
             type: string
             example: "status"
@@ -794,7 +801,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
     delete:
       summary: Forward a single http DELETE request via a proxy running on the device.
-      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided DELETE request and proxies the response from the server as the proxy in the device receives it
+      description: Forward a single http request via a proxy running on the device. Transparently forwards the provided DELETE request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -814,14 +821,14 @@ paths:
         - name: targetPort
           in: path
           required: true
-          description: The port the target host is listening in
+          description: The port the target host is listening on
           schema:
             type: string
             example: "8100"
         - name: targetPath
           in: path
           required: true
-          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          description: The path to make the request to. Can contain query parameters, which will be forwarded too.
           schema:
             type: string
             example: "status"
@@ -842,7 +849,7 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
     head:
       summary: Forward a single http HEAD request via a proxy running on the device.
-      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided HEAD request and proxies the response from the server as the proxy in the device receives it
+      description: Forward a single http request via a proxy running on the device. Transparently forwards the provided HEAD request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -862,14 +869,14 @@ paths:
         - name: targetPort
           in: path
           required: true
-          description: The port the target host is listening in
+          description: The port the target host is listening on
           schema:
             type: string
             example: "8100"
         - name: targetPath
           in: path
           required: true
-          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          description: The path to make the request to. Can contain query parameters, which will be forwarded too.
           schema:
             type: string
             example: "status"
@@ -889,8 +896,8 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
     options:
-      summary: Forward a single http GET request via a proxy running on the device.
-      description: Forward a single http request via a proxy running on the device. Tranparently forwards the provided OPTIONS request and proxies the response from the server as the proxy in the device receives it
+      summary: Forward a single http OPTIONS request via a proxy running on the device.
+      description: Forward a single http request via a proxy running on the device. Transparently forwards the provided OPTIONS request and proxies the response from the server as the proxy in the device receives it
       tags:
         - "HTTP Proxy"
       parameters:
@@ -910,14 +917,14 @@ paths:
         - name: targetPort
           in: path
           required: true
-          description: The port the target host is listening in
+          description: The port the target host is listening on
           schema:
             type: string
             example: "8100"
         - name: targetPath
           in: path
           required: true
-          description: The path to make the request to. Can contain query parameters, which wil be forwared too.
+          description: The path to make the request to. Can contain query parameters, which will be forwarded too.
           schema:
             type: string
             example: "status"
@@ -1060,7 +1067,7 @@ components:
                 example: Device not ready.
               detail:
                 type: string
-                example: "You tried to interact with the device, but the state of you session is 'PENDING'. The state needs to be 'ACTIVE', if you want to interact with the device."
+                example: "You tried to interact with the device, but the state of your session is 'PENDING'. The state needs to be 'ACTIVE', if you want to interact with the device."
   schemas:
     DeviceStatus:
       type: string
@@ -1072,7 +1079,7 @@ components:
         - "MAINTENANCE"
         - "OFFLINE"
       example: "IN_USE"
-      description: the current state of the device. For private devices you will se a more specific state. For public devices we present an aggregated state. If one device that shares a descriptorId is available, then the entire descriptor will be marked as available.
+      description: Current device state. Private devices show specific states; public devices show aggregated states. If any device sharing a descriptorId is available, the descriptor is marked as available.
     Device:
       type: object
       properties:
@@ -1113,14 +1120,13 @@ components:
           type: string
           format: date-time
           description: |
-            For active sessions, this is the UTC timestamp until which the session is actively kept alive. After this timestamp the session will be forcefully closed. It is configured using the `sessionDuration` parameter at creation. When a session is closed it will transition to terminal state and the `retainUntil` timestamp will be set.
-            Please note that for sessions that last longer than 6 hours, we might forcefully close the session before the `expiresAt` time.
+            UTC timestamp when the active session expires and will be forcefully closed. Set via `sessionDuration` at creation. Mutually exclusive with `retainUntil`. Sessions longer than 6 hours may be closed before this time. When closed, transitions to terminal state and `retainUntil` is set.
           example: "2025-06-06T10:00:00Z"
         retainUntil:
           type: string
           format: date-time
           description: |
-            For **closed/errored** sessions, this is the UTC timestamp until which the session is retained. After this timestamp the session will be deleted. It is mutually exclusive with `expiresAt`. We typically retain sessions for 5 mintes after they are closed or errored.
+            UTC timestamp until which closed/errored sessions are retained before deletion. Mutually exclusive with `expiresAt`. Typically 5 minutes after closure or error.
           example: null
         device:
           type: object
@@ -1286,18 +1292,7 @@ components:
           type: boolean
           default: true
           description: |
-            Controls Sauce Labs' app instrumentation (which includes **app re-signing for iOS**) for Real Device testing.
-            For iOS, this process is **vital for app installation as it ensures the app is correctly signed and provisioned to run on Sauce Labs' diverse real devices.** This step is necessary to meet Apple's security requirements on these cloud devices. Enabling this also unlocks advanced features on both platforms.
-
-            **Automatic Behavior**: This setting is automatically forced to `true` if:
-            - The iOS app is signed with an ad-hoc certificate.
-            - Any instrumentation-dependent advanced features are enabled (for iOS or Android).
-
-            **Impact of `false`**:
-            - iOS: App installation will likely fail, as the app may not meet the code signing and provisioning requirements for cloud devices.
-            - Android: Advanced features will be disabled (though the app may still install).
-
-            For best results and compatibility, it's recommended to allow this to be `true`
+            Enable app instrumentation (includes app re-signing for iOS). Required for iOS app installation on cloud devices. Unlocks advanced features on both platforms. Automatically set to `true` if iOS app uses ad-hoc signing or advanced features are enabled. Setting to `false` may cause iOS installation failures and disables Android advanced features. Recommended: `true`.
           example: true
         launchAfterInstall:
           type: boolean
