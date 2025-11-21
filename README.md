@@ -22,7 +22,7 @@ The WebSocket API provides real-time streams of data from your device sessions. 
 
 ### Companion Socket
 - **Purpose:** Streams device logs, appium logs and other real-time device events.
-- **Data format:** JSON messages. Each message includes a `type` field to distinguish between log messages and other events. By default you will receive `device.log.message` in this socket. If you start an appium server then `appium.log.message` will be written to the socket.
+- **Data format:** JSON messages. Each message includes a `type` field to distinguish between log messages and other events. By default, you will receive `device.log.message` in this socket. If you start an appium server or network capture then `appium.log.message` or `device.har.entry` respectively will be written to the socket.
 - **Usage:** Connect to this socket to receive live logs and event notifications from your device session.
 
 #### Example: Log Message
@@ -51,3 +51,9 @@ Use your devices more efficiently and decrease the runtime of your Appium test s
 **once** and run tests back-to-back, cutting out repetitive setup and wait times.
 
 For a quick start, please see **[Faster, Smarter Appium Testing with RDC Access API Sessions.](./SAUCE_LABS_HOSTED_APPIUM.md)**.
+
+
+## Real-Time Debugging
+
+Tap into the device's live stream to see system logs, Appium logs, and network traffic in real-time.
+Check out our **[Companion Socket Guide](./COMPANION_SOCKET.md)** to learn how to filter and capture exactly what you need.
