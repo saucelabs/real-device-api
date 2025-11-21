@@ -51,3 +51,9 @@ Use your devices more efficiently and decrease the runtime of your Appium test s
 **once** and run tests back-to-back, cutting out repetitive setup and wait times.
 
 For a quick start, please see **[Faster, Smarter Appium Testing with RDC Access API Sessions.](./SAUCE_LABS_HOSTED_APPIUM.md)**.
+
+
+## Real-Time Debugging
+
+Tap into the device's live stream to see system logs, Appium logs, and network traffic in real-time.
+Check out our **[Companion Socket Guide](./COMPANION_SOCKET.md)** to learn how to filter and capture exactly what you need.
