@@ -1582,16 +1582,16 @@ components:
     RemoveFilesRequest:
       type: object
       properties:
-        fileName:
+        path:
           type: string
           description: "The name of the file to remove."
-          example: "test.txt"
+          example: "/sdcard/folder/test.txt"
         id:
           type: string
           description: "The application ID (optional)."
           example: "com.example.app"
       required:
-        - fileName
+        - path
     PullFileRequest:
       type: object
       properties:
