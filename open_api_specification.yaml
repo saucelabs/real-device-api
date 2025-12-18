@@ -26,6 +26,8 @@ tags:
     description: Create, Inspect and Close your Sauce Labs Real Device session.
   - name: Device Interactions
     description: Interact with your Device.
+  - name: Device File Management
+    description: Manage files on the device storage (Android only).
   - name: Appium Server
     description: Start an Appium Server in our Sauce Cloud. This server runs next to your device and will remain active as long as the device session is active.
   - name: HTTP Proxy
@@ -688,6 +690,169 @@ paths:
         "404":
           $ref: "#/components/responses/DeviceSessionNotFound"
 
+  /sessions/{sessionId}/device/listFiles:
+    post:
+      summary: List files in a directory on the device
+      description: |
+        Returns a list of files and directories at the specified path on the device storage.
+        **Supported OS**: Android only.
+      tags:
+        - "Device File Management"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListFilesRequest"
+      responses:
+        "200":
+          description: List of files retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: "/sdcard/Download/file.txt"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "422":
+          $ref: "#/components/responses/CapabilityNotSupported"
+        "500":
+          $ref: "#/components/responses/DeviceFileOperationError"
+
+  /sessions/{sessionId}/device/removeFile:
+    post:
+      summary: Remove a file from the device
+      description: |
+        Deletes a specific file from the device storage.
+        **Supported OS**: Android only.
+      tags:
+        - "Device File Management"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveFilesRequest"
+      responses:
+        "204":
+          description: File removed successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "422":
+          $ref: "#/components/responses/CapabilityNotSupported"
+        "500":
+          $ref: "#/components/responses/DeviceFileOperationError"
+
+  /sessions/{sessionId}/device/pushFile:
+    post:
+      summary: Push a file to the device
+      description: |
+        Uploads a file to the specified destination path on the device storage.
+        **Supported OS**: Android only.
+        **Format**: Multipart Form Data.
+      tags:
+        - "Device File Management"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - destinationPath
+                - file
+              properties:
+                destinationPath:
+                  type: string
+                  description: "The absolute path on the device where the file should be saved (e.g., /sdcard/Download/image.png)."
+                  example: "/sdcard/Download/test-image.png"
+                file:
+                  type: string
+                  format: binary
+                  description: "The binary content of the file to upload."
+      responses:
+        "204":
+          description: File uploaded successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "422":
+          $ref: "#/components/responses/CapabilityNotSupported"
+        "500":
+          $ref: "#/components/responses/DeviceFileOperationError"
+
+  /sessions/{sessionId}/device/pullFile:
+    post:
+      summary: Pull a file from the device
+      description: |
+        Retrieves a file from the device storage as a binary stream.
+        **Supported OS**: Android only.
+      tags:
+        - "Device File Management"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: The id of the device session
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PullFileRequest"
+      responses:
+        "200":
+          description: File retrieved successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              description: Indicates the filename of the downloaded file.
+              schema:
+                type: string
+                example: 'attachment; filename="report.txt"'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/DeviceSessionNotFound"
+        "422":
+          $ref: "#/components/responses/CapabilityNotSupported"
+        "500":
+          $ref: "#/components/responses/DeviceFileOperationError"
+
   /sessions/{sessionId}/device/proxy/http/{targetHost}/{targetPort}/{targetPath}:
     get:
       summary: Forward a single http GET request via a proxy running on the device.
@@ -1102,6 +1267,41 @@ components:
               detail:
                 type: string
                 example: "You tried to interact with the device, but the state of your session is 'PENDING'. The state needs to be 'ACTIVE', if you want to interact with the device."
+    CapabilityNotSupported:
+      description: Capability not supported
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: "about:blank"
+              title:
+                type: string
+                example: "Capability not supported"
+              detail:
+                type: string
+                example: "Listing files is currently only supported on Android."
+    DeviceFileOperationError:
+      description: Device File Operation Error
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                example: "about:blank"
+              title:
+                type: string
+                example: "File operation failed"
+              detail:
+                type: string
+                example: "Path not found"
+              status:
+                type: integer
+                example: 500
   schemas:
     DeviceStatus:
       type: string
@@ -1366,3 +1566,42 @@ components:
               example: false
       required:
         - app
+    ListFilesRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          description: "The path to the directory to list files from."
+          example: "/sdcard/Download/"
+        id:
+          type: string
+          description: "The application ID (optional)."
+          example: "com.example.app"
+      required:
+        - path
+    RemoveFilesRequest:
+      type: object
+      properties:
+        fileName:
+          type: string
+          description: "The name of the file to remove."
+          example: "test.txt"
+        id:
+          type: string
+          description: "The application ID (optional)."
+          example: "com.example.app"
+      required:
+        - fileName
+    PullFileRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          description: "The absolute path of the file on the device to retrieve."
+          example: "/sdcard/Download/report.txt"
+        id:
+          type: string
+          description: "The application ID (optional)."
+          example: "com.example.app"
+      required:
+        - path
