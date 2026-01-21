@@ -33,6 +33,31 @@ tags:
   - name: HTTP Proxy
     description: Allows you to proxy HTTP/S to your device. Can be used as a port-forward to your device.
 paths:
+  /devices:
+    get:
+      summary: "List all device descriptors"
+      description: "List our catalog of devices available to you. Use this endpoint to retrieve 'device descriptors'. Note: for public devices there can be multiple physical devices that share one 'device descriptor'"
+      tags:
+        - "Device Catalog"
+      parameters:
+        - name: deviceId
+          in: query
+          description: "Filter by device identifier (supports regex). Matches the descriptor ID or device name."
+          required: false
+          schema:
+            type: string
+            example: "iPhone.*"
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceDescriptor"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
   /devices/status:
     get:
       summary: "List the status of all devices"
@@ -410,7 +435,7 @@ paths:
     post:
       summary: Change device configuration
       description: |
-        Changes device settings such as orientation, locale, or animations during an active session. 
+        Changes device settings such as orientation, locale, or animations during an active session.
         The request body must contain **at least one** of the properties below.
         **Note**: Some settings are OS-specific. Please review the parameter descriptions for details.
       tags:
@@ -1151,7 +1176,7 @@ components:
         HTTP Basic Authentication using your Sauce Labs credentials.
         - **Username**: Your Sauce Labs username.
         - **Password**: Your Sauce Labs access key.
-        
+
         You can find both your username and access key on the **Account > User Settings** page in the Sauce Labs UI.
   responses:
     BadRequest:
@@ -1303,6 +1328,171 @@ components:
                 type: integer
                 example: 500
   schemas:
+    DeviceDescriptor:
+      type: object
+      description: "Device descriptor containing hardware and software specifications for a device type in the Sauce Labs device catalog. For public devices there can be multiple physical devices that share one descriptor."
+      properties:
+        id:
+          type: string
+          description: "Unique identifier for this device descriptor."
+          example: "iPhone_15_Pro_real"
+        name:
+          type: string
+          description: "Human-readable device name."
+          example: "iPhone 15 Pro"
+        modelNumber:
+          type: string
+          description: "Device model number."
+          example: "A2848"
+        manufacturer:
+          type: array
+          items:
+            type: string
+          description: "Device manufacturer(s)."
+          example: ["Apple"]
+        os:
+          type: string
+          enum: ["ANDROID", "IOS"]
+          description: "Operating system type."
+          example: "IOS"
+        osVersion:
+          type: string
+          description: "Operating system version."
+          example: "17.0"
+        apiLevel:
+          type: integer
+          description: "Android API level. Only relevant for Android devices."
+          example: 34
+        abiType:
+          type: string
+          description: "CPU architecture/ABI type."
+          example: "arm64-v8a"
+        screenSize:
+          type: number
+          format: double
+          description: "Screen diagonal size in inches."
+          example: 6.1
+        resolutionWidth:
+          type: integer
+          description: "Screen width in pixels."
+          example: 1179
+        resolutionHeight:
+          type: integer
+          description: "Screen height in pixels."
+          example: 2556
+        dpi:
+          type: integer
+          description: "Screen pixel density (dots per inch)."
+          example: 460
+        dpiName:
+          type: string
+          description: "Android DPI bucket name (ldpi, mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi)."
+          example: "xxhdpi"
+        pixelsPerPoint:
+          type: integer
+          description: "iOS scale factor (pixels per point)."
+          example: 3
+        isTablet:
+          type: boolean
+          description: "Whether the device is a tablet form factor."
+          example: false
+        isArm:
+          type: boolean
+          description: "Whether the device has an ARM processor."
+          example: true
+        isPrivate:
+          type: boolean
+          description: "Whether this is a private device."
+          example: false
+        hasOnScreenButtons:
+          type: boolean
+          description: "Whether the device has software navigation buttons (Android)."
+          example: false
+        internalOrientation:
+          type: string
+          enum: ["PORTRAIT", "LANDSCAPE"]
+          description: "Internal screen orientation."
+          example: "PORTRAIT"
+        defaultOrientation:
+          type: string
+          enum: ["PORTRAIT", "LANDSCAPE"]
+          description: "Default screen orientation."
+          example: "PORTRAIT"
+        ramSize:
+          type: integer
+          description: "RAM size in MB."
+          example: 6144
+        internalStorageSize:
+          type: integer
+          description: "Internal storage size in MB."
+          example: 128000
+        sdCardSize:
+          type: integer
+          description: "SD card size in MB (Android only)."
+          example: 0
+        cpuCores:
+          type: integer
+          description: "Number of CPU cores."
+          example: 6
+        cpuFrequency:
+          type: integer
+          description: "CPU frequency in MHz."
+          example: 3230
+        cpuType:
+          type: string
+          enum: ["ARM", "X86"]
+          description: "CPU architecture type."
+          example: "ARM"
+        deviceFamily:
+          type: string
+          enum: ["ANY", "IPHONE", "IPAD"]
+          description: "iOS device family."
+          example: "IPHONE"
+        supportsMockLocations:
+          type: boolean
+          description: "Whether the device supports mock GPS locations."
+          example: true
+        supportsAppiumWebAppTesting:
+          type: boolean
+          description: "Whether the device supports Appium web testing."
+          example: true
+        supportsGlobalProxy:
+          type: boolean
+          description: "Whether the device supports global HTTP proxy."
+          example: true
+        supportsMinicapSocketConnection:
+          type: boolean
+          description: "Whether the device supports minicap socket streaming."
+          example: true
+        supportsManualWebTesting:
+          type: boolean
+          description: "Whether the device supports manual web testing."
+          example: true
+        supportsMultiTouch:
+          type: boolean
+          description: "Whether the device supports multi-touch gestures."
+          example: true
+        supportsXcuiTest:
+          type: boolean
+          description: "Whether the device supports XCUITest (iOS only)."
+          example: true
+        isKeyGuardDisabled:
+          type: boolean
+          description: "Whether the device keyguard/lock screen is disabled."
+          example: true
+        isRooted:
+          type: boolean
+          description: "Whether the device is rooted/jailbroken."
+          example: false
+        isAlternativeIoEnabled:
+          type: boolean
+          description: "Whether alternative I/O mode is enabled."
+          example: true
+      required:
+        - id
+        - name
+        - os
+        - osVersion
     DeviceStatus:
       type: string
       enum:
