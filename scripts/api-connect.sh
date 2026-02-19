@@ -174,15 +174,21 @@ handle_ios_usbmuxd() {
         "$wss_endpoint" "$session_id" "$SAUCE_USERNAME" "$SAUCE_ACCESS_KEY" > "$WRAPPER"
     chmod +x "$WRAPPER"
 
-    # --- Start a persistent keepalive WebSocket ---
+    # --- Start a persistent keepalive WebSocket with auto-reconnect ---
     # The server sends pings every 10s; websocat auto-responds with pongs, which
     # triggers deviceBinding.touch() on the server to keep the session alive.
     # Without this, the binding expires during idle periods between local connections.
-    websocat --binary --no-close "$wss_endpoint" \
-        -H "sessionId: $session_id" --basic-auth "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" \
-        < /dev/null > /dev/null 2>&1 &
+    # The loop auto-reconnects if the server-side bridge closes the idle connection.
+    # We pipe from 'sleep infinity' to keep stdin open — /dev/null causes immediate EOF.
+    (while true; do
+        sleep infinity | websocat --binary "$wss_endpoint" \
+            -H "sessionId: $session_id" --basic-auth "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" \
+            > /dev/null 2>&1 || true
+        echo "  [keepalive] disconnected, reconnecting in 5s..."
+        sleep 5
+    done) &
     keepalive_pid=$!
-    sleep 1
+    sleep 2
 
     if ! kill -0 "$keepalive_pid" 2>/dev/null; then
         echo "Error: keepalive WebSocket failed to connect"
