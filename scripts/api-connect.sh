@@ -4,36 +4,59 @@ set -e
 # --- Configuration ---
 ADB_PORT=50371
 WDA_PORT=8100
+USBMUXD_SOCKET=/var/run/usbmuxd
+USBMUXD_SOCKET_BACKUP=/var/run/usbmuxd.real
 
 # --- Global variables for cleanup ---
-# These will hold the process/container IDs for the cleanup function
 websocat_pid=""
+socat_pid=""
+iproxy_pid=""
+keepalive_pid=""
 CADDY_CONTAINER_ID=""
-# This variable needs to be accessible by the cleanup function
+WRAPPER=""
 os=""
-# Initialize RESPONSE_FILE early so the quit function can always access it
 RESPONSE_FILE=$(mktemp)
 
-# --- Cleanup Functions ---
-# This function is the single point of exit. It handles cleaning up
-# all resources (Docker containers, processes, temp files).
+# --- Cleanup Function ---
 quit() {
     local exit_code=${1:-0}
-    echo # Newline for cleaner exit logs
+    echo
     echo "Exiting and cleaning up resources..."
 
     # --- Android Cleanup ---
-    # Check if the websocat PID exists and the process is running, then kill it.
-    if [[ -n "$websocat_pid" && -e /proc/$websocat_pid ]]; then
+    if [[ -n "$websocat_pid" ]] && kill -0 "$websocat_pid" 2>/dev/null; then
         echo "Stopping websocat process (PID: $websocat_pid)..."
         kill "$websocat_pid" 2>/dev/null || true
+        adb disconnect localhost:$ADB_PORT 2>/dev/null || true
         echo "Websocat process stopped."
     fi
 
-    # --- iOS Cleanup ---
-    # Check if the Caddy container ID exists and the container is running, then stop it.
-    # The '--rm' flag used during 'docker run' will ensure the container is removed after stopping.
-    if [[ -n "$CADDY_CONTAINER_ID" && $(docker ps -q -f "id=${CADDY_CONTAINER_ID}") ]]; then
+    # --- iOS usbmuxd bridge Cleanup ---
+    if [[ -n "$keepalive_pid" ]] && kill -0 "$keepalive_pid" 2>/dev/null; then
+        kill "$keepalive_pid" 2>/dev/null || true
+    fi
+
+    if [[ -n "$iproxy_pid" ]] && kill -0 "$iproxy_pid" 2>/dev/null; then
+        echo "Stopping iproxy process (PID: $iproxy_pid)..."
+        kill "$iproxy_pid" 2>/dev/null || true
+    fi
+
+    if [[ -n "$socat_pid" ]] && kill -0 "$socat_pid" 2>/dev/null; then
+        echo "Stopping socat process (PID: $socat_pid)..."
+        kill "$socat_pid" 2>/dev/null || true
+        wait "$socat_pid" 2>/dev/null || true
+    fi
+
+    [[ -n "$WRAPPER" && -e "$WRAPPER" ]] && rm -f "$WRAPPER"
+
+    if [[ -e "$USBMUXD_SOCKET_BACKUP" ]]; then
+        rm -f "$USBMUXD_SOCKET"
+        mv "$USBMUXD_SOCKET_BACKUP" "$USBMUXD_SOCKET"
+        echo "Restored $USBMUXD_SOCKET"
+    fi
+
+    # --- iOS Caddy Cleanup ---
+    if [[ -n "$CADDY_CONTAINER_ID" ]] && docker ps -q -f "id=${CADDY_CONTAINER_ID}" | grep -q .; then
         echo "Stopping Caddy container ($CADDY_CONTAINER_ID)..."
         docker stop "$CADDY_CONTAINER_ID" > /dev/null
         echo "Caddy container stopped."
@@ -42,62 +65,48 @@ quit() {
     # --- General Cleanup ---
     rm -f "$RESPONSE_FILE"
 
-    # Unset the trap to prevent recursive calls on exit
     trap - SIGINT SIGTERM
     exit "$exit_code"
 }
 
-# This function is the handler that gets called when a signal is received.
-# It simply calls the main 'quit' function to perform the cleanup.
 handle_exit_signal() {
-    echo # Newline for cleaner logs
+    echo
     echo "Signal received."
     quit 0
 }
 
-# --- Signal Trapping ---
-# Trap SIGINT (Ctrl+C) and SIGTERM, and call the cleanup function when they are received.
 trap handle_exit_signal SIGINT SIGTERM
 
 
 # --- Helper Functions ---
 check_dependency() {
-    if [ -z "$2" ]; then
-            PACKAGE="$1"
-        else
-            PACKAGE="$2"
-    fi
-
-
-    if ! command -v $1 &> /dev/null
-    then 
-    printf "%s\n\n" "$PACKAGE not installed in the system, please install before using $0"
+    local cmd=$1
+    local package=${2:-$1}
+    if ! command -v "$cmd" &>/dev/null; then
+        echo "$package is not installed. Please install before using $0"
+        quit 1
     fi
 }
 
-
 call_api() {
     local URL=$1
-    local METHOD=$2
+    local METHOD=${2:-GET}
 
-    if [ -z "$METHOD" ]; then
-        METHOD="GET"
-    fi
-
-    HTTP_CODE=$(curl -s -X "$METHOD" -u "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" -o "$RESPONSE_FILE" -w "%{http_code}" "$URL")
+    HTTP_CODE=$(curl -s -X "$METHOD" -u "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" \
+        -o "$RESPONSE_FILE" -w "%{http_code}" "$URL")
 
     if [ "$HTTP_CODE" -ne 200 ]; then
         echo "Error HTTP $HTTP_CODE"
-        cat "$RESPONSE_FILE"|jq .
-        rm "$RESPONSE_FILE"
+        cat "$RESPONSE_FILE" | jq .
         quit 1
     fi
 
-    RESPONSE=$(cat $RESPONSE_FILE)
+    RESPONSE=$(cat "$RESPONSE_FILE")
 }
 
 
 # --- OS-Specific Handlers ---
+
 handle_android() {
     check_dependency 'websocat'
     check_dependency 'adb'
@@ -105,20 +114,19 @@ handle_android() {
     local wss_endpoint=$1
     local session_id=$2
 
-    websocat -b tcp-l:127.0.0.1:$ADB_PORT $wss_endpoint -E -H "sessionId: $session_id" --basic-auth "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" &
-
+    websocat -b tcp-l:127.0.0.1:$ADB_PORT "$wss_endpoint" \
+        -E -H "sessionId: $session_id" \
+        --basic-auth "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" &
     websocat_pid=$!
     sleep 1
-    
-    echo "websocat started with PID: $websocat_pid on port $ADB_PORT"
 
+    echo "websocat started with PID: $websocat_pid on port $ADB_PORT"
     adb connect localhost:$ADB_PORT
     echo "ADB connected! You can start your appium server with 'appium --allow-insecure chromedriver_autodownload'"
 
-    # Display example capabilities for the user
     cat <<EOF
-Example capabilities: 
-{ 
+Example capabilities:
+{
   "platformName": "Android",
   "browserName": "Chrome",
   "appium:automationName": "UiAutomator2",
@@ -128,10 +136,109 @@ Example capabilities:
   }
 }
 EOF
-
 }
 
 handle_ios() {
+    local wss_endpoint=$1
+    local session_id=$2
+
+    if [[ $EUID -eq 0 ]]; then
+        handle_ios_usbmuxd "$wss_endpoint" "$session_id"
+    else
+        echo "Not running as root — using Caddy reverse proxy for WDA-only access."
+        echo "For full device access (Xcode, Instruments), re-run with: sudo $0 $SESSION"
+        echo
+        handle_ios_caddy "$session_id"
+    fi
+}
+
+handle_ios_usbmuxd() {
+    check_dependency 'socat'
+    check_dependency 'websocat'
+    check_dependency 'iproxy' 'libimobiledevice'
+
+    local wss_endpoint=$1
+    local session_id=$2
+
+    # --- Backup the real usbmuxd socket ---
+    if [[ -e "$USBMUXD_SOCKET" ]]; then
+        echo "Moving $USBMUXD_SOCKET -> $USBMUXD_SOCKET_BACKUP"
+        mv "$USBMUXD_SOCKET" "$USBMUXD_SOCKET_BACKUP"
+    else
+        echo "Warning: $USBMUXD_SOCKET does not exist (no local usbmuxd running?)"
+    fi
+
+    # --- Create wrapper for socat EXEC ---
+    WRAPPER=$(mktemp /tmp/usbmuxd-ws-XXXXXX)
+    printf '#!/bin/bash\nexec websocat --binary "%s" -H "sessionId: %s" --basic-auth "%s:%s"\n' \
+        "$wss_endpoint" "$session_id" "$SAUCE_USERNAME" "$SAUCE_ACCESS_KEY" > "$WRAPPER"
+    chmod +x "$WRAPPER"
+
+    # --- Start a persistent keepalive WebSocket ---
+    # The server sends pings every 10s; websocat auto-responds with pongs, which
+    # triggers deviceBinding.touch() on the server to keep the session alive.
+    # Without this, the binding expires during idle periods between local connections.
+    websocat --binary --no-close "$wss_endpoint" \
+        -H "sessionId: $session_id" --basic-auth "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" \
+        < /dev/null > /dev/null 2>&1 &
+    keepalive_pid=$!
+    sleep 1
+
+    if ! kill -0 "$keepalive_pid" 2>/dev/null; then
+        echo "Error: keepalive WebSocket failed to connect"
+        quit 1
+    fi
+    echo "Keepalive WebSocket connected (PID: $keepalive_pid)"
+
+    # --- Start the usbmuxd bridge ---
+    echo "Bridging $USBMUXD_SOCKET <-> $wss_endpoint"
+    socat UNIX-LISTEN:"${USBMUXD_SOCKET}",fork,unlink-early,mode=0666 \
+        EXEC:"$WRAPPER" &
+    socat_pid=$!
+
+    # --- Wait for the device to appear ---
+    echo "Waiting for device..."
+    local retries=0
+    local device_udid=""
+    while [[ $retries -lt 30 ]]; do
+        device_udid=$(idevice_id -l 2>/dev/null | head -1)
+        if [[ -n "$device_udid" ]]; then
+            break
+        fi
+        sleep 1
+        retries=$((retries + 1))
+    done
+
+    if [[ -z "$device_udid" ]]; then
+        echo "Error: No device appeared after 30s"
+        quit 1
+    fi
+    echo "Device found: $device_udid"
+
+    # --- Start iproxy for WDA ---
+    iproxy "$WDA_PORT" 8100 &
+    iproxy_pid=$!
+    sleep 1
+    echo "WDA proxy started on localhost:$WDA_PORT (via iproxy)"
+
+    cat <<EOF
+
+Device is available in Xcode, Instruments, and other local tools.
+WDA is accessible at http://localhost:$WDA_PORT
+
+Example Appium capabilities:
+{
+  "platformName": "iOS",
+  "appium:automationName": "XCUITest",
+  "appium:noReset": true,
+  "appium:skipDeviceInitialization": true,
+  "appium:udid": "$device_udid",
+  "appium:webDriverAgentUrl": "http://localhost:$WDA_PORT"
+}
+EOF
+}
+
+handle_ios_caddy() {
     check_dependency 'docker'
 
     local session_id=$1
@@ -157,13 +264,12 @@ http://127.0.0.1:$WDA_PORT, http://localhost:$WDA_PORT {
 }
 EOF
 
-    # Run the caddy container in detached mode (-d) and store the container ID
-    # in the global variable. The '--rm' flag ensures it's removed on stop.
-    CADDY_CONTAINER_ID=$(docker run --rm -d -p "$WDA_PORT:$WDA_PORT" -v "$PWD/Caddyfile":/etc/caddy/Caddyfile caddy)
+    CADDY_CONTAINER_ID=$(docker run --rm -d -p "$WDA_PORT:$WDA_PORT" \
+        -v "$PWD/Caddyfile":/etc/caddy/Caddyfile caddy)
     echo "Caddy container started with ID: $CADDY_CONTAINER_ID"
 
-        cat <<EOF
-Example capabilities: 
+    cat <<EOF
+Example capabilities:
 {
   "platformName": "iOS",
   "appium:automationName": "XCUITest",
@@ -173,39 +279,8 @@ Example capabilities:
   "appium:webDriverAgentUrl": "http://localhost:$WDA_PORT"
 }
 EOF
-    
 }
 
-quit() {
-    local exit_code=${1:-0}
-    echo # Newline for cleaner exit logs
-    echo "Exiting and cleaning up resources..."
-
-    # --- Android Cleanup ---
-    # Check if the websocat PID exists and the process is running, then kill it.
-    if [[ -n "$websocat_pid" ]] && kill -0 "$websocat_pid" 2>/dev/null; then
-        echo "Stopping websocat process (PID: $websocat_pid)..."
-        kill "$websocat_pid" 2>/dev/null || true
-        adb disconnect localhost:$ADB_PORT
-        echo "Websocat process stopped."
-    fi
-
-    # --- iOS Cleanup ---
-    # Check if the Caddy container ID exists and the container is running, then stop it.
-    # The '--rm' flag used during 'docker run' will ensure the container is removed after stopping.
-    if [[ -n "$CADDY_CONTAINER_ID" && $(docker ps -q -f "id=${CADDY_CONTAINER_ID}") ]]; then
-        echo "Stopping Caddy container ($CADDY_CONTAINER_ID)..."
-        docker stop "$CADDY_CONTAINER_ID" > /dev/null
-        echo "Caddy container stopped."
-    fi
-
-    # --- General Cleanup ---
-    rm -f "$RESPONSE_FILE"
-
-    # Unset the trap to prevent recursive calls on exit
-    trap - SIGINT SIGTERM
-    exit "$exit_code"
-}
 
 # --- Main Script Execution ---
 
@@ -220,18 +295,19 @@ if [ -z "$SAUCE_USERNAME" ] || [ -z "$SAUCE_ACCESS_KEY" ] || [ -z "$SAUCE_API_UR
 fi
 
 if [ -z "$SESSION" ]; then
-    echo "Usage $0 <sessionId>"
+    echo "Usage: $0 <sessionId>"
+    quit 1
 fi
 
 RESPONSE=""
 
 call_api "$SAUCE_API_URL/rdc/v2/sessions/$SESSION"
-STATE=$(echo $RESPONSE|jq -r '.state')
+STATE=$(echo "$RESPONSE" | jq -r '.state')
 
 while [ "$STATE" == "PENDING" ]; do
     echo "Session creation still pending"
     call_api "$SAUCE_API_URL/rdc/v2/sessions/$SESSION"
-    STATE=$(echo $RESPONSE|jq -r '.state')
+    STATE=$(echo "$RESPONSE" | jq -r '.state')
     sleep 5
 done
 
@@ -240,39 +316,32 @@ if [ "$STATE" != "ACTIVE" ]; then
     quit 1
 fi
 
-os=$(echo $RESPONSE|jq -r '.device.os')
+os=$(echo "$RESPONSE" | jq -r '.device.os')
+session_id=$(echo "$RESPONSE" | jq -r '.id')
+wss_endpoint=$(echo "$RESPONSE" | jq -r '.links.vusbUrl')
 
 if [ "$os" == "ANDROID" ]; then
     echo "Platform: ANDROID"
-    wss_endpoint=$(echo $RESPONSE|jq -r '.links.vusbUrl') 
-    session_id=$(echo $RESPONSE|jq -r '.id') 
-    handle_android $wss_endpoint $session_id
+    handle_android "$wss_endpoint" "$session_id"
 else
     echo "Platform: IOS"
-    session_id=$(echo $RESPONSE|jq -r '.id') 
-    handle_ios $session_id
+    # Rewrite /forward to /usbmuxd for the iOS usbmuxd bridge
+    wss_endpoint="${wss_endpoint/\/forward//usbmuxd}"
+    handle_ios "$wss_endpoint" "$session_id"
 fi
 
 # --- Wait for termination ---
-# The script will now pause here. The 'trap' command set earlier will
-# catch Ctrl+C or SIGTERM, run the 'quit' function for cleanup, and exit.
-# If the background task exits on its own, the 'wait' or 'docker wait'
-# command will also complete, and the script will then call 'quit'.
 echo
-echo "Setup complete. The script is now running and waiting for a signal."
-echo "Press Ctrl+C or send a SIGTERM to stop and clean up."
+echo "Setup complete. Press Ctrl+C to stop and clean up."
 echo
 
 if [ "$os" == "ANDROID" ]; then
-    # Wait for the websocat process to exit. This will be interrupted by the trap.
     wait "$websocat_pid"
-else
-    # 'docker wait' will block until the container stops. This will be interrupted
-    # when the trap calls 'docker stop'.
+elif [[ -n "$socat_pid" ]]; then
+    wait "$socat_pid"
+elif [[ -n "$CADDY_CONTAINER_ID" ]]; then
     docker wait "$CADDY_CONTAINER_ID" >/dev/null 2>&1 || true
 fi
 
-# If we reach this point, it means the background task ended on its own.
-# We call quit to ensure consistent cleanup and exit.
 echo "Background task finished unexpectedly."
 quit 0
