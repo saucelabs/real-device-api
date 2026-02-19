@@ -16,6 +16,7 @@ CADDY_CONTAINER_ID=""
 WRAPPER=""
 os=""
 RESPONSE_FILE=$(mktemp)
+KEEPALIVE_LOG=$(mktemp)
 
 # --- Cleanup Function ---
 quit() {
@@ -64,6 +65,7 @@ quit() {
 
     # --- General Cleanup ---
     rm -f "$RESPONSE_FILE"
+    rm -f "$KEEPALIVE_LOG"
 
     trap - SIGINT SIGTERM
     exit "$exit_code"
@@ -113,10 +115,12 @@ handle_android() {
 
     local wss_endpoint=$1
     local session_id=$2
+    local auth_b64
+    auth_b64=$(printf '%s:%s' "$SAUCE_USERNAME" "$SAUCE_ACCESS_KEY" | base64)
 
     websocat -b tcp-l:127.0.0.1:$ADB_PORT "$wss_endpoint" \
         -E -H "sessionId: $session_id" \
-        --basic-auth "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" &
+        -H "Authorization: Basic $auth_b64" &
     websocat_pid=$!
     sleep 1
 
@@ -159,6 +163,11 @@ handle_ios_usbmuxd() {
 
     local wss_endpoint=$1
     local session_id=$2
+    local auth_b64
+    auth_b64=$(printf '%s:%s' "$SAUCE_USERNAME" "$SAUCE_ACCESS_KEY" | base64)
+
+    echo "WSS endpoint: $wss_endpoint"
+    echo "Session ID:   $session_id"
 
     # --- Backup the real usbmuxd socket ---
     if [[ -e "$USBMUXD_SOCKET" ]]; then
@@ -170,8 +179,8 @@ handle_ios_usbmuxd() {
 
     # --- Create wrapper for socat EXEC ---
     WRAPPER=$(mktemp /tmp/usbmuxd-ws-XXXXXX)
-    printf '#!/bin/bash\nexec websocat --binary "%s" -H "sessionId: %s" --basic-auth "%s:%s"\n' \
-        "$wss_endpoint" "$session_id" "$SAUCE_USERNAME" "$SAUCE_ACCESS_KEY" > "$WRAPPER"
+    printf '#!/bin/bash\nexec websocat --binary "%s" -H "sessionId: %s" -H "Authorization: Basic %s"\n' \
+        "$wss_endpoint" "$session_id" "$auth_b64" > "$WRAPPER"
     chmod +x "$WRAPPER"
 
     # --- Start a persistent keepalive WebSocket with auto-reconnect ---
@@ -179,11 +188,12 @@ handle_ios_usbmuxd() {
     # triggers deviceBinding.touch() on the server to keep the session alive.
     # Without this, the binding expires during idle periods between local connections.
     # The loop auto-reconnects if the server-side bridge closes the idle connection.
-    # We pipe from 'sleep infinity' to keep stdin open — /dev/null causes immediate EOF.
+    # We pipe from 'tail -f /dev/null' to keep stdin open — /dev/null alone causes immediate EOF.
+    echo "Starting keepalive WebSocket..."
     (while true; do
-        sleep infinity | websocat --binary "$wss_endpoint" \
-            -H "sessionId: $session_id" --basic-auth "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" \
-            > /dev/null 2>&1 || true
+        tail -f /dev/null | websocat --binary "$wss_endpoint" \
+            -H "sessionId: $session_id" -H "Authorization: Basic $auth_b64" \
+            > /dev/null 2>>"$KEEPALIVE_LOG" || true
         echo "  [keepalive] disconnected, reconnecting in 5s..."
         sleep 5
     done) &
@@ -192,6 +202,9 @@ handle_ios_usbmuxd() {
 
     if ! kill -0 "$keepalive_pid" 2>/dev/null; then
         echo "Error: keepalive WebSocket failed to connect"
+        echo "--- websocat stderr ---"
+        cat "$KEEPALIVE_LOG"
+        echo "--- end ---"
         quit 1
     fi
     echo "Keepalive WebSocket connected (PID: $keepalive_pid)"
@@ -325,6 +338,12 @@ fi
 os=$(echo "$RESPONSE" | jq -r '.device.os')
 session_id=$(echo "$RESPONSE" | jq -r '.id')
 wss_endpoint=$(echo "$RESPONSE" | jq -r '.links.vusbUrl')
+
+if [ -z "$wss_endpoint" ] || [ "$wss_endpoint" == "null" ]; then
+    echo "Error: No vusbUrl in session response. The session may not have been created with VUSB/live-testing capabilities."
+    echo "Available links: $(echo "$RESPONSE" | jq -c '.links')"
+    quit 1
+fi
 
 if [ "$os" == "ANDROID" ]; then
     echo "Platform: ANDROID"
