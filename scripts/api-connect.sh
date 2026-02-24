@@ -350,22 +350,15 @@ fi
 
 os=$(echo "$RESPONSE" | jq -r '.device.os')
 session_id=$(echo "$RESPONSE" | jq -r '.id')
-wss_endpoint=$(echo "$RESPONSE" | jq -r '.links.vusbUrl')
-
-if [ -z "$wss_endpoint" ] || [ "$wss_endpoint" == "null" ]; then
-    echo "Error: No vusbUrl in session response. The session may not have been created with VUSB/live-testing capabilities."
-    echo "Available links: $(echo "$RESPONSE" | jq -c '.links')"
-    quit 1
-fi
+adb_endpoint=$(echo "$RESPONSE" | jq -r '.links.adbUrl')
+usbmuxd_endpoint=$(echo "$RESPONSE" | jq -r '.links.usbmuxdUrl')
 
 if [ "$os" == "ANDROID" ]; then
     echo "Platform: ANDROID"
-    handle_android "$wss_endpoint" "$session_id"
+    handle_android "$adb_endpoint" "$session_id"
 else
     echo "Platform: IOS"
-    # Rewrite /forward to /usbmuxd for the iOS usbmuxd bridge
-    wss_endpoint="${wss_endpoint/\/forward//usbmuxd}"
-    handle_ios "$wss_endpoint" "$session_id"
+    handle_ios "$usbmuxd_endpoint" "$session_id"
 fi
 
 # --- Wait for termination ---
