@@ -116,6 +116,13 @@ handle_android() {
     local wss_endpoint=$1
     local session_id=$2
     local auth_b64
+
+    if [ -z "$wss_endpoint" ] || [ "$wss_endpoint" == "null" ]; then
+        echo "Error: No adbUrl in session response. The session may not have been created with low level access capabilities."
+        echo "Available links: $(echo "$RESPONSE" | jq -c '.links')"
+        quit 1
+    fi
+
     auth_b64=$(printf '%s:%s' "$SAUCE_USERNAME" "$SAUCE_ACCESS_KEY" | base64)
 
     websocat -b tcp-l:127.0.0.1:$ADB_PORT "$wss_endpoint" \
@@ -145,6 +152,12 @@ EOF
 handle_ios() {
     local wss_endpoint=$1
     local session_id=$2
+
+    if [ -z "$wss_endpoint" ] || [ "$wss_endpoint" == "null" ]; then
+        echo "Error: No usbmuxdUrl in session response. The session may not have been created with low level access capabilities."
+        echo "Available links: $(echo "$RESPONSE" | jq -c '.links')"
+        quit 1
+    fi
 
     if [[ $EUID -eq 0 ]]; then
         handle_ios_usbmuxd "$wss_endpoint" "$session_id"
