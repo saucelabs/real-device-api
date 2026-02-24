@@ -116,6 +116,13 @@ handle_android() {
     local wss_endpoint=$1
     local session_id=$2
     local auth_b64
+
+    if [ -z "$wss_endpoint" ] || [ "$wss_endpoint" == "null" ]; then
+        echo "Error: No adbUrl in session response. The session may not have been created with low level access capabilities."
+        echo "Available links: $(echo "$RESPONSE" | jq -c '.links')"
+        quit 1
+    fi
+
     auth_b64=$(printf '%s:%s' "$SAUCE_USERNAME" "$SAUCE_ACCESS_KEY" | base64)
 
     websocat -b tcp-l:127.0.0.1:$ADB_PORT "$wss_endpoint" \
@@ -145,6 +152,12 @@ EOF
 handle_ios() {
     local wss_endpoint=$1
     local session_id=$2
+
+    if [ -z "$wss_endpoint" ] || [ "$wss_endpoint" == "null" ]; then
+        echo "Error: No usbmuxdUrl in session response. The session may not have been created with low level access capabilities."
+        echo "Available links: $(echo "$RESPONSE" | jq -c '.links')"
+        quit 1
+    fi
 
     if [[ $EUID -eq 0 ]]; then
         handle_ios_usbmuxd "$wss_endpoint" "$session_id"
@@ -337,22 +350,15 @@ fi
 
 os=$(echo "$RESPONSE" | jq -r '.device.os')
 session_id=$(echo "$RESPONSE" | jq -r '.id')
-wss_endpoint=$(echo "$RESPONSE" | jq -r '.links.vusbUrl')
-
-if [ -z "$wss_endpoint" ] || [ "$wss_endpoint" == "null" ]; then
-    echo "Error: No vusbUrl in session response. The session may not have been created with VUSB/live-testing capabilities."
-    echo "Available links: $(echo "$RESPONSE" | jq -c '.links')"
-    quit 1
-fi
+adb_endpoint=$(echo "$RESPONSE" | jq -r '.links.adbUrl')
+usbmuxd_endpoint=$(echo "$RESPONSE" | jq -r '.links.usbmuxdUrl')
 
 if [ "$os" == "ANDROID" ]; then
     echo "Platform: ANDROID"
-    handle_android "$wss_endpoint" "$session_id"
+    handle_android "$adb_endpoint" "$session_id"
 else
     echo "Platform: IOS"
-    # Rewrite /forward to /usbmuxd for the iOS usbmuxd bridge
-    wss_endpoint="${wss_endpoint/\/forward//usbmuxd}"
-    handle_ios "$wss_endpoint" "$session_id"
+    handle_ios "$usbmuxd_endpoint" "$session_id"
 fi
 
 # --- Wait for termination ---
